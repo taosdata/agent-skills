@@ -1,0 +1,16 @@
+# 示例：把本仓库作为依赖接入到你的项目
+#
+# 用法：把此文件内容复制到「你的业务项目」的 `.cowork/Skills.toml` 中，然后执行：
+#   cowork config install
+
+[project]
+name = "my-project"
+description = "Example project that consumes agent-skills"
+
+[skills.install]
+# 从 GitHub 安装本仓库
+agent-skills = "zitsen/agent-skills"
+
+[triggers]
+# 多个 router 并存时可以设置优先级
+priority = ["gen-doc"]
