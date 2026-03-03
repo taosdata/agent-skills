@@ -2,7 +2,7 @@
 
 本教程目标：把 Agent Skills 这套“可复用能力封装方式”讲清楚，并以本仓库为例给出 **可操作、可复现** 的落地步骤：
 
-- 仓库：`zitsen/agent-skills`
+- 仓库：`taosdata/agent-skills`
 - 技能源码目录：`skills/`
 - 相关文档：
   - Agent Skills 官方站点：agentskills.io
@@ -331,19 +331,19 @@ cowork init
 在你的目标项目根目录执行：
 
 ```bash
-cowork install zitsen/agent-skills --local
+cowork install taosdata/agent-skills --local
 ```
 
 #### 全局安装（跨项目可用）
 
 ```bash
-cowork install zitsen/agent-skills
+cowork install taosdata/agent-skills
 ```
 
 #### 只安装某些 skills（示例）
 
 ```bash
-cowork install zitsen/agent-skills -s gen-doc -s gen-doc-rs --local
+cowork install taosdata/agent-skills -s gen-doc -s gen-doc-rs --local
 ```
 
 #### 列出已安装仓库
@@ -407,7 +407,7 @@ cowork test --path ./skills
 ### 6.2 演示前置：把技能安装到项目可发现的位置
 
 ```bash
-cowork install zitsen/agent-skills --local
+cowork install taosdata/agent-skills --local
 ```
 
 > `--local` 会把 skills 安装到目标项目的技能目录（具体位置取决于 cowork/宿主 Agent 的实现）。
@@ -698,7 +698,7 @@ cowork test --check-conflicts
 - 在目标项目里安装 skills（项目本地安装更方便验证）：
 
 ```bash
-cowork install zitsen/agent-skills --local
+cowork install taosdata/agent-skills --local
 ```
 
 - 然后在 Warp 中运行：

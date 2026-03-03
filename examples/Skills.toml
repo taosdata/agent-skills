@@ -9,7 +9,7 @@ description = "Example project that consumes agent-skills"
 
 [skills.install]
 # 从 GitHub 安装本仓库
-agent-skills = "zitsen/agent-skills"
+agent-skills = "taosdata/agent-skills"
 
 [triggers]
 # 多个 router 并存时可以设置优先级
