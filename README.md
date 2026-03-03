@@ -53,7 +53,7 @@ cowork --version
 在 **你的项目根目录**（不是本仓库根目录）执行：
 
 ```bash
-cowork install zitsen/agent-skills --local
+cowork install taosdata/agent-skills --local
 ```
 
 > `--local` 会把 skills 安装到项目的技能目录（例如 `.claude/skills/`），便于 Warp/Agent 发现与使用。

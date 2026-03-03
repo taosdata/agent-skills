@@ -5,7 +5,7 @@
 ## 0. 前置：在你的目标项目根目录安装 skills
 
 ```bash
-cowork install zitsen/agent-skills --local
+cowork install taosdata/agent-skills --local
 ```
 
 ## 1. 在 Warp 中开始
