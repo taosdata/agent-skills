@@ -1,0 +1,453 @@
+# 概要设计说明书（Functional Spec）- taosgen Skills
+
+# 修订记录
+
+| 编写日期 | 发布日期 | 版本 | 修订人 | 主要修改内容 |
+| --- | --- | --- | --- | --- |
+| 2025-03-03 | - | 0.1.0 | Agent | 初始版本，定义 taosgen skills 功能设计 |
+
+# 背景
+
+taosgen 是 TDengine 团队开发的时序数据领域性能基准测试工具，相比 taosBenchmark 具有以下优势：
+- 支持作业编排和 DAG 依赖关系
+- 支持多种目标（TDengine、MQTT、Kafka）
+- 丰富的数据生成方式（Lua 表达式、CSV、随机数等）
+- 即时数据生成，无需预生成大批量数据文件
+- 多种时间间隔策略控制数据写入
+
+然而，taosgen 的 YAML 配置复杂，包含大量参数（tdengine、mqtt、kafka、schema、jobs 等），对新手不友好。本技能旨在通过 AI Agent 降低使用门槛，实现配置生成和运行的自动化。
+
+# 定义
+
+| 术语 | 定义 |
+| --- | --- |
+| Job | 作业，由用户定义用于完成特定任务的一组操作集合，可包含多个步骤 |
+| Step | 步骤，作业中的基础操作单位，按顺序执行 |
+| Action | 行动，封装好的可复用操作单元（如 tdengine/create-database、tdengine/insert） |
+| Schema | 数据定义和生成模式，包含表结构、数据生成方式等 |
+| DSN | Data Source Name，连接 TDengine 的地址格式（如 taos+ws://root:taosdata@localhost:6041/tsbench） |
+| Interlace | 交错模式，控制数据生成时多张表数据交错写入的行数 |
+
+# 行为说明
+
+## Skill 结构
+
+采用 Router + Sub-skills 模式：
+
+```
+taosgen/                    # Router skill
+├── SKILL.md               # 统一入口，路由到子技能
+└── references/
+    ├── CONFIG.md          # 配置生成详细说明
+    ├── RUN.md             # 运行辅助详细说明
+    └── EXAMPLES.md        # 配置示例库
+
+taosgen-config/            # 配置生成子技能（Thin wrapper）
+└── SKILL.md
+
+taosgen-run/               # 运行辅助子技能（Thin wrapper）
+└── SKILL.md
+```
+
+## 交互流程
+
+### 配置生成流程（taosgen-config）
+
+1. **场景选择**：
+   - 询问用户测试场景（TDengine 写入 / MQTT 发布 / Kafka 生产）
+   - 提供预设模板（智能电表、服务器监控、车辆轨迹等）
+
+2. **基础参数收集**：
+   ```
+   - 目标类型：tdengine / mqtt / kafka
+   - 连接信息：host, port, user, password（使用环境变量引用）
+   - 数据规模：子表数量、每表行数、时间范围
+   ```
+
+3. **Schema 定义**：
+   ```
+   - 表结构：tags（标签列）、columns（普通列）
+   - 数据生成方式：random / order / expression
+   - 时间戳策略：起始时间、时间精度、时间间隔
+   ```
+
+4. **Jobs 定义**：
+   ```
+   - 创建数据库
+   - 创建超级表
+   - 创建子表
+   - 写入数据（可包含依赖关系）
+   ```
+
+5. **配置输出**：
+   - 生成 YAML 文件
+   - 输出绝对路径：`OutputPath: /absolute/path/to/config.yaml`
+   - 提供配置说明和使用建议
+
+### 运行辅助流程（taosgen-run）
+
+1. **环境检查**：
+   ```bash
+   # 检查 taosgen 是否安装
+   which taosgen || echo "taosgen not found"
+   taosgen --version
+
+   # 检查目标数据库是否可连接
+   # 根据配置中的 DSN 进行连接测试
+   ```
+
+2. **命令构建**：
+   ```bash
+   # 基本命令格式
+   taosgen -h <host> -c <config-file>
+
+   # 带参数覆盖
+   taosgen -h <host> -P <port> -u <user> -p <password> -c <config-file>
+   ```
+
+3. **运行建议**：
+   - 建议先使用小规模数据验证配置
+   - 提供性能监控建议
+   - 说明中断/恢复功能（checkpoint）
+
+## 配置参数映射
+
+### TDengine 连接配置
+
+```yaml
+tdengine:
+  dsn: "${TAOSGEN_DSN:-taos+ws://root:taosdata@localhost:6041/tsbench}"
+  drop_if_exists: false
+  props: "precision ms vgroups 4"
+  pool:
+    enabled: true
+    max_size: 100
+    min_size: 2
+    timeout: 1000
+```
+
+### Schema 配置
+
+```yaml
+schema:
+  name: "meters"
+  tbname:
+    prefix: "d"
+    count: 10000
+    from: 0
+  tags:
+    - name: groupid
+      type: INT
+      gen_type: random
+      min: 1
+      max: 10
+    - name: location
+      type: VARCHAR(24)
+      gen_type: random
+      values: ["California.Campbell", "Texas.Austin", "NewYork.NewYorkCity"]
+  columns:
+    - name: ts
+      type: TIMESTAMP
+      gen_type: order
+      min: 1700000000000
+      max: 1899999999999
+    - name: current
+      type: FLOAT
+      gen_type: random
+      min: 0.0
+      max: 100.0
+    - name: voltage
+      type: INT
+      gen_type: expression
+      expr: "220 + 10 * math.sin(_i / 10)"
+  generation:
+    interlace: 0
+    rows_per_table: 10000
+    rows_per_batch: 10000
+```
+
+### Jobs 配置
+
+```yaml
+jobs:
+  create-db:
+    name: "Create Database"
+    needs: []
+    steps:
+      - name: "Create tsbench database"
+        uses: tdengine/create-database
+        with:
+          database: "tsbench"
+
+  create-stables:
+    name: "Create Super Tables"
+    needs: [create-db]
+    steps:
+      - name: "Create meters super table"
+        uses: tdengine/create-super-table
+        with:
+          database: "tsbench"
+          name: "meters"
+
+  create-tables:
+    name: "Create Child Tables"
+    needs: [create-stables]
+    steps:
+      - name: "Batch create child tables"
+        uses: tdengine/create-child-table
+        with:
+          database: "tsbench"
+          batch:
+            size: 1000
+            concurrency: 10
+
+  insert-data:
+    name: "Insert Data"
+    needs: [create-tables]
+    steps:
+      - name: "Write data to meters"
+        uses: tdengine/insert
+        with:
+          database: "tsbench"
+          format: stmt
+          concurrency: 8
+          time_interval:
+            enabled: true
+            interval_strategy: fixed
+            fixed_interval:
+              base_interval: 300000  # 5 minutes in ms
+```
+
+## 安全设计
+
+1. **敏感信息处理**：
+   - 密码使用环境变量占位符：`${TAOS_PASSWORD:-taosdata}`
+   - Skill 不存储实际密码值
+   - 生成的配置文件中密码显示为占位符
+
+2. **风险提示**：
+   - `drop_if_exists: true` 时显示警告："此配置会删除已存在的数据库，请确认"
+   - 大批量写入（rows_per_table > 1000000）时提示性能影响
+
+3. **命令限制**：
+   - 不生成包含 shell 特殊字符的命令
+   - 配置文件路径使用绝对路径，避免相对路径带来的不确定性
+
+# 性能
+
+1. Skill 本身无性能开销，仅为配置生成
+2. 生成的配置支持 taosgen 的性能优化特性：
+   - 连接池（pool）
+   - 批量写入（rows_per_batch）
+   - 并发控制（concurrency）
+   - 数据预生成（num_cached_batches）
+
+# 安全
+
+1. **配置审计**：生成的 YAML 文件头部包含注释：
+   ```yaml
+   # Generated by taosgen-config skill
+   # Version: 0.1.0
+   # Generated at: 2025-03-03T10:30:00Z
+   # DO NOT EDIT MANUALLY unless you know what you're doing
+   ```
+
+2. **最小权限原则**：
+   - 默认 `drop_if_exists: false`
+   - 默认使用普通用户权限（非 root）
+
+# 兼容性
+
+无破坏性变更。本 Skill 为新增功能，不影响现有功能。
+
+# 运维
+
+1. **版本管理**：
+   - Skill 版本遵循语义化版本（0.1.0 起始）
+   - 与 taosgen 工具版本解耦
+
+2. **错误处理**：
+   - 生成失败时返回清晰的错误信息
+   - 提供常见错误的排查指南
+
+# 使用场景
+
+## 场景 1：快速启动 TDengine 压力测试
+
+用户：开发工程师
+需求：快速生成一个向 TDengine 写入 1 万表、每表 1 万条数据的配置
+
+交互：
+```
+User: /taosgen-config
+Agent: 请选择测试场景：
+       1. TDengine 写入测试
+       2. MQTT 发布测试
+       3. Kafka 生产测试
+User: 1
+Agent: 请输入子表数量（默认 10000）：
+User: 10000
+Agent: 请输入每表行数（默认 10000）：
+User: 10000
+Agent: 请输入 TDengine 连接地址（默认 localhost:6041）：
+User: [直接回车]
+Agent: 配置已生成：OutputPath: /home/user/project/taosgen-config.yaml
+```
+
+## 场景 2：自定义 Schema 的复杂测试
+
+用户：测试工程师
+需求：测试自定义业务数据模型（车辆轨迹数据）
+
+交互：
+```
+User: /taosgen-config
+Agent: 请选择测试场景：
+User: 自定义 Schema
+Agent: 请输入表结构定义...
+[逐步收集 tags、columns、生成方式等]
+```
+
+## 场景 3：运行已有配置
+
+用户：DevOps 工程师
+需求：运行已生成的配置，但覆盖某些参数
+
+交互：
+```
+User: /taosgen-run
+Agent: 请输入配置文件路径：
+User: /home/user/project/taosgen-config.yaml
+Agent: 是否需要覆盖参数？（如 host, port 等）
+User: host=192.168.1.100
+Agent: 环境检查通过，建议运行命令：
+       taosgen -h 192.168.1.100 -c /home/user/project/taosgen-config.yaml
+```
+
+# 约束和限制
+
+## 约束
+
+1. 必须安装 taosgen 工具才能运行生成的配置
+2. 目标数据库必须提前运行且可访问
+3. YAML 配置文件需符合 taosgen 规范
+
+## 限制
+
+1. 不支持 Windows 系统（taosgen 本身不支持）
+2. 不支持 TDengine 2.x 版本（仅支持 3.x）
+3. 生成的配置不自动处理数据库权限问题
+
+# 常见错误和排查
+
+## 错误 1：无法连接到 TDengine
+
+症状：运行 taosgen 时报连接错误
+排查：
+1. 检查 TDengine 服务是否运行
+2. 检查 DSN 中的地址、端口、用户名、密码
+3. 检查防火墙设置
+
+## 错误 2：配置验证失败
+
+症状：taosgen 提示配置格式错误
+排查：
+1. 检查 YAML 缩进（使用空格而非 Tab）
+2. 检查必填字段是否缺失
+3. 检查数据类型是否匹配
+
+## 错误 3：数据写入性能低下
+
+症状：写入吞吐量低于预期
+排查：
+1. 调整 `rows_per_batch` 参数
+2. 增加 `concurrency` 线程数
+3. 启用 `pool` 连接池
+4. 检查网络延迟
+
+# 可观测性
+
+1. **生成配置预览**：在保存前展示配置摘要
+2. **运行日志建议**：提示用户关注 taosgen 的输出日志
+3. **进度估算**：根据配置估算运行时间
+
+# 安装和卸载
+
+## 安装
+
+通过 cowork 安装：
+```bash
+cowork install taosdata/agent-skills --local
+```
+
+依赖：
+- 本地需安装 taosgen 工具（仅运行时需要）
+
+## 卸载
+
+```bash
+cowork uninstall taosdata/agent-skills
+```
+
+# 文档
+
+需要更新：
+1. agent-skills README.md（添加 taosgen skills 说明）
+2. 本仓库的 docs/AGENT_SKILLS_TUTORIAL.md（可选，添加使用示例）
+
+# 参考文档
+
+1. taosgen 官方文档
+2. Agent Skills 规范: https://agentskills.io/specification
+3. TDengine 官方文档
+
+# 附录
+
+## 配置示例库
+
+### 示例 1：智能电表（默认场景）
+
+见 RS 文档功能需求部分。
+
+### 示例 2：最小化配置
+
+```yaml
+# 使用默认值的简化配置
+schema:
+  name: "meters"
+  tbname:
+    count: 1000
+  generation:
+    rows_per_table: 1000
+
+jobs:
+  write:
+    name: "Write Data"
+    steps:
+      - uses: tdengine/create-database
+      - uses: tdengine/create-super-table
+      - uses: tdengine/create-child-table
+      - uses: tdengine/insert
+```
+
+### 示例 3：CSV 数据源
+
+```yaml
+schema:
+  name: "meters"
+  from_csv:
+    tags:
+      file_path: "./tags.csv"
+      tbname_index: 2
+    columns:
+      file_path: "./data.csv"
+      timestamp_index: 1
+      timestamp_offset:
+        offset_type: relative
+        value: "+10s"
+
+jobs:
+  write:
+    steps:
+      - uses: tdengine/insert
+```
