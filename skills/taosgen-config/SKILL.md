@@ -74,9 +74,9 @@ OutputPath: /absolute/path/to/taosgen-config-{target}-{scenario}.yaml
 # Generated at: {timestamp}
 
 tdengine:
-  dsn: "${TAOSGEN_DSN:-taos+ws://root:taosdata@{host}:{port}/{database}}"
+  dsn: "taos+ws://root:taosdata@{host}:{port}/{database}"
   drop_if_exists: false
-  props: "precision ms vgroups 4"
+  props: "precision 'ms' vgroups 4"
   pool:
     enabled: true
     max_size: 100
@@ -97,46 +97,76 @@ schema:
     interlace: 0
     rows_per_table: {rows_per_table}
     rows_per_batch: {rows_per_batch}
-    num_cached_batches: {rows_per_batch}
 
 jobs:
-  create-db:
-    name: "Create Database"
-    needs: []
-    steps:
-      - uses: tdengine/create-database
-        with:
-          database: "{database}"
-
-  create-stables:
-    name: "Create Super Tables"
-    needs: [create-db]
+  insert-data:
     steps:
       - uses: tdengine/create-super-table
-        with:
-          database: "{database}"
-          name: "{table_name}"
-
-  create-tables:
-    name: "Create Child Tables"
-    needs: [create-stables]
-    steps:
       - uses: tdengine/create-child-table
         with:
-          database: "{database}"
           batch:
             size: 1000
             concurrency: 10
-
-  insert-data:
-    name: "Insert Data"
-    needs: [create-tables]
-    steps:
       - uses: tdengine/insert
         with:
-          database: "{database}"
-          format: stmt
           concurrency: 8
+```
+
+## Column Definition Syntax
+
+### String Types with Length
+
+Use length in parentheses:
+```yaml
+- name: location
+  type: binary(24)
+  values:
+    - "California.Campbell"
+    - "Texas.Austin"
+```
+
+### Data Generation (Inferred from Keys)
+
+**Random with min/max:**
+```yaml
+- name: current
+  type: float
+  min: 0.0
+  max: 100.0
+```
+
+**Random with values list:**
+```yaml
+- name: location
+  type: binary(24)
+  values:
+    - "New York"
+    - "Los Angeles"
+    - "Chicago"
+```
+
+**Order (sequential):**
+```yaml
+- name: id
+  type: int
+  min: 1
+  max: 1000000
+```
+
+**Timestamp with step:**
+```yaml
+- name: ts
+  type: timestamp
+  start: now + 10s
+  precision: ms
+  step: 1
+```
+
+**Expression (Lua):**
+```yaml
+- name: voltage
+  type: float
+  expr: "220 + 10 * math.sin(_i / 10)"
 ```
 
 ## Safety

@@ -45,22 +45,27 @@ Command line parameters override configuration file settings.
 
 Priority: CLI args > Config file > Default values
 
-## Environment Variables
+## Password and Credential Handling
 
-Recommended environment variables for security:
+DSN and credentials are configured directly in the YAML configuration file:
 
+```yaml
+tdengine:
+  dsn: "taos+ws://root:taosdata@localhost:6041/tsbench"
+
+mqtt:
+  user: "mqtt_user"
+  password: "mqtt_password"
+
+kafka:
+  rdkafka_options:
+    sasl.username: "kafka_user"
+    sasl.password: "kafka_password"
+```
+
+To override password at runtime, use the `-p` command line parameter:
 ```bash
-# TDengine
-export TAOSGEN_DSN="taos+ws://root:taosdata@localhost:6041/tsbench"
-export TAOS_PASSWORD="taosdata"
-
-# MQTT
-export MQTT_USER="mqtt_user"
-export MQTT_PASS="mqtt_password"
-
-# Kafka SASL
-export KAFKA_SASL_USER="kafka_user"
-export KAFKA_SASL_PASS="kafka_password"
+taosgen -h localhost -p your_password -c config.yaml
 ```
 
 ## Running with Different Scenarios
@@ -136,8 +141,8 @@ netstat -tlnp | grep 9092
 
 **Cause**: Wrong username or password
 **Solution**:
-- Verify credentials
-- Check if using environment variables correctly
+- Verify credentials in config file or command line parameters
+- Override password using `-p` parameter: `taosgen -p your_password -c config.yaml`
 
 ### Error: Config Validation Failed
 

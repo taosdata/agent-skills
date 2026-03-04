@@ -7,9 +7,9 @@ This reference provides detailed guidance for generating taosgen YAML configurat
 ```yaml
 # Global settings
 tdengine:
-  dsn: "${TAOSGEN_DSN:-taos+ws://root:taosdata@localhost:6041/tsbench}"
+  dsn: "taos+ws://root:taosdata@localhost:6041/tsbench"
   drop_if_exists: false
-  props: "precision ms vgroups 4"
+  props: "precision 'ms' vgroups 4"
   pool:
     enabled: true
     max_size: 100
@@ -18,8 +18,8 @@ tdengine:
 
 mqtt:
   uri: "tcp://localhost:1883"
-  user: "${MQTT_USER:-}"
-  password: "${MQTT_PASS:-}"
+  user: ""
+  password: ""
   client_id: "taosgen"
   keep_alive: 5
   clean_session: true
@@ -41,69 +41,37 @@ schema:
     from: 0
   tags:
     - name: groupid
-      type: INT
-      gen_type: random
+      type: int
       min: 1
       max: 10
   columns:
     - name: ts
-      type: TIMESTAMP
-      gen_type: order
-      min: 1700000000000
+      type: timestamp
+      start: now + 10s
+      precision: ms
+      step: 1
     - name: current
-      type: FLOAT
-      gen_type: random
+      type: float
       min: 0.0
       max: 100.0
   generation:
     interlace: 0
     rows_per_table: 10000
     rows_per_batch: 10000
-    num_cached_batches: 10000
     tables_reuse_data: true
 
-# Jobs (DAG)
+# Jobs (single job with steps for sequential execution)
 jobs:
-  create-db:
-    name: "Create Database"
-    needs: []
+  insert-data:
     steps:
-      - name: "Create database"
-        uses: tdengine/create-database
+      - uses: tdengine/create-super-table
+      - uses: tdengine/create-child-table
         with:
-          database: "tsbench"
-
-  create-stables:
-    name: "Create Super Tables"
-    needs: [create-db]
-    steps:
-      - name: "Create super table"
-        uses: tdengine/create-super-table
-        with:
-          database: "tsbench"
-          name: "meters"
-
-  create-tables:
-    name: "Create Child Tables"
-    needs: [create-stables]
-    steps:
-      - name: "Create child tables"
-        uses: tdengine/create-child-table
-        with:
-          database: "tsbench"
           batch:
             size: 1000
             concurrency: 10
-
-  insert-data:
-    name: "Insert Data"
-    needs: [create-tables]
-    steps:
-      - name: "Write data"
-        uses: tdengine/insert
+      - uses: tdengine/insert
         with:
-          database: "tsbench"
-          format: stmt
           concurrency: 8
 ```
 
@@ -115,41 +83,54 @@ jobs:
 |----------|-------|
 | Integer | `timestamp`, `bool`, `tinyint`, `tinyint unsigned`, `smallint`, `smallint unsigned`, `int`, `int unsigned`, `bigint`, `bigint unsigned` |
 | Float | `float`, `double`, `decimal` |
-| String | `nchar`, `varchar` (binary) |
+| String | `nchar`, `varchar(n)`, `binary(n)` |
 
 **Not supported**: `json`, `geometry`, `varbinary`, `blob`
 
+**Note**: For string types with length, use `binary(24)` or `varchar(50)` format (length in parentheses).
+
 ## Data Generation Types
 
-### random
+Data generation type is inferred from the presence of specific keys. Do NOT use `gen_type:` prefix.
+
+### random (inferred from min/max or values)
 
 ```yaml
 - name: current
-  type: FLOAT
-  gen_type: random
-  distribution: uniform  # Currently only uniform
+  type: float
   min: 0.0
   max: 100.0
-  # OR use values list:
-  values: ["value1", "value2", "value3"]
+
+# OR with values list:
+- name: location
+  type: binary(24)
+  values:
+    - "California.Campbell"
+    - "Texas.Austin"
+    - "NewYork.NewYorkCity"
 ```
 
-### order
+### order (inferred from min/max on integer/timestamp types)
 
 ```yaml
 - name: id
-  type: INT
-  gen_type: order
+  type: int
   min: 1
   max: 1000000
+
+# Timestamp with step:
+- name: ts
+  type: timestamp
+  start: now + 10s
+  precision: ms
+  step: 1
 ```
 
-### expression (Lua)
+### expression (inferred from expr key)
 
 ```yaml
 - name: voltage
-  type: FLOAT
-  gen_type: expression
+  type: float
   expr: "220 + 10 * math.sin(_i / 10)"
 ```
 
@@ -174,7 +155,6 @@ schema:
       file_path: "./tags.csv"
       has_header: true
       tbname_index: 2
-      exclude_indices: "0"  # Exclude column 0
     columns:
       file_path: "./data.csv"
       has_header: true
@@ -187,31 +167,46 @@ schema:
         value: "+10s"  # or timestamp value for absolute
 ```
 
-## Actions
-
-### tdengine/create-database
-
-Creates a TDengine database.
+## Generation Control
 
 ```yaml
-- uses: tdengine/create-database
-  with:
-    database: "tsbench"
-    checkpoint:
-      enabled: true
-      interval_sec: 60
+schema:
+  generation:
+    interlace: 0           # 0 = disable, >0 = interlace rows count
+    rows_per_table: 10000  # Rows per table
+    rows_per_batch: 10000  # Rows per batch request
+    tables_reuse_data: true
+```
+
+**Note on num_cached_batches**: This parameter is automatically calculated. If manually specified, it cannot exceed the number of batches needed (rows_per_table / rows_per_batch).
+
+## Actions
+
+Actions are specified in `jobs.<job_name>.steps`. For sequential execution, use a single job with multiple steps.
+
+### Simple Sequential Job Structure
+
+```yaml
+jobs:
+  insert-data:
+    steps:
+      - uses: tdengine/create-super-table
+      - uses: tdengine/create-child-table
+        with:
+          batch:
+            size: 1000
+            concurrency: 10
+      - uses: tdengine/insert
+        with:
+          concurrency: 8
 ```
 
 ### tdengine/create-super-table
 
-Creates a super table (STable).
+Creates a super table (STable). Uses global schema configuration.
 
 ```yaml
 - uses: tdengine/create-super-table
-  with:
-    database: "tsbench"
-    name: "meters"
-    # Can override schema here
 ```
 
 ### tdengine/create-child-table
@@ -221,7 +216,6 @@ Creates child tables.
 ```yaml
 - uses: tdengine/create-child-table
   with:
-    database: "tsbench"
     batch:
       size: 1000
       concurrency: 10
@@ -234,10 +228,9 @@ Inserts data into tables.
 ```yaml
 - uses: tdengine/insert
   with:
-    database: "tsbench"
+    concurrency: 8
     format: stmt  # or "sql"
     auto_create_table: false
-    concurrency: 8
     failure_handling:
       max_retries: 3
       retry_interval_ms: 1000
@@ -263,12 +256,11 @@ Publishes data to MQTT broker.
 ```yaml
 - uses: mqtt/publish
   with:
-    format: json
     concurrency: 8
     topic: "factory/{table}/{location}"  # Dynamic topic with placeholders
     qos: 1  # 0, 1, or 2
     retain: false
-    tbname_key: "table"  # JSON field name for table name
+    tbname_key: "table"
     records_per_message: 1
     # Also supports failure_handling and time_interval
 ```
@@ -295,6 +287,48 @@ Produces data to Kafka.
     # Also supports failure_handling and time_interval
 ```
 
+## Connection Configuration
+
+### TDengine
+
+```yaml
+tdengine:
+  dsn: "taos+ws://root:taosdata@localhost:6041/tsbench"
+  drop_if_exists: false
+  props: "precision 'ms' vgroups 4"  # Note: precision value in single quotes
+  pool:
+    enabled: true
+    max_size: 100
+    min_size: 2
+    timeout: 1000
+```
+
+**Important**: Use direct string for DSN, not environment variable syntax.
+
+### MQTT
+
+```yaml
+mqtt:
+  uri: "tcp://localhost:1883"
+  user: ""
+  password: ""
+  client_id: "taosgen"
+  keep_alive: 5
+  clean_session: true
+  max_buffered_messages: 10000
+```
+
+### Kafka
+
+```yaml
+kafka:
+  bootstrap_servers: "localhost:9092"
+  client_id: "taosgen"
+  topic: "test-topic"
+  rdkafka_options:
+    security.protocol: "plaintext"
+```
+
 ## Time Offset Format
 
 For `timestamp_offset` with `offset_type: relative`:
@@ -315,6 +349,10 @@ Examples:
 
 1. **Use connection pool**: Enable `tdengine.pool.enabled: true` for better performance
 2. **Batch size**: Use `rows_per_batch: 10000` for optimal throughput
-3. **Concurrency**: Adjust `concurrency` based on CPU cores (typically 4-16)
+3. **Concurrency**: Adjust based on CPU cores (typically 4-16)
 4. **Interlace**: Use `interlace: 100` for more realistic multi-table scenarios
-5. **Time interval**: Enable for simulating real-time data ingestion
+5. **Simple jobs**: For sequential execution, use single job with multiple steps instead of DAG dependencies
+6. **String types**: Always specify length in parentheses, e.g., `binary(24)`, `varchar(50)`
+7. **Data generation**: Omit `gen_type`, let system infer from presence of `min/max`, `expr`, or `values`
+8. **DSN format**: Use direct string, not environment variable reference
+9. **Props format**: Use single quotes around precision value, e.g., `precision 'ms'`

@@ -14,12 +14,11 @@ schema:
     count: 100
   generation:
     rows_per_table: 1000
+    rows_per_batch: 1000
 
 jobs:
-  write:
-    name: "Write Test Data"
+  insert-data:
     steps:
-      - uses: tdengine/create-database
       - uses: tdengine/create-super-table
       - uses: tdengine/create-child-table
       - uses: tdengine/insert
@@ -32,9 +31,9 @@ Classic smart meter scenario with 10,000 devices, each reporting every 5 minutes
 ```yaml
 # taosgen-config-tdengine-meters.yaml
 tdengine:
-  dsn: "${TAOSGEN_DSN:-taos+ws://root:taosdata@localhost:6041/tsbench}"
+  dsn: "taos+ws://root:taosdata@localhost:6041/tsbench"
   drop_if_exists: false
-  props: "precision ms vgroups 4"
+  props: "precision 'ms' vgroups 4"
   pool:
     enabled: true
     max_size: 100
@@ -49,80 +48,48 @@ schema:
     from: 0
   tags:
     - name: groupid
-      type: INT
-      gen_type: random
+      type: int
       min: 1
       max: 10
     - name: location
-      type: VARCHAR(24)
-      gen_type: random
-      values: ["California.Campbell", "Texas.Austin", "NewYork.NewYorkCity"]
+      type: binary(24)
+      values:
+        - "California.Campbell"
+        - "Texas.Austin"
+        - "NewYork.NewYorkCity"
   columns:
     - name: ts
-      type: TIMESTAMP
-      gen_type: order
-      min: 1700000000000
+      type: timestamp
+      start: now + 10s
+      precision: ms
+      step: 1
     - name: current
-      type: FLOAT
-      gen_type: random
+      type: float
       min: 0.0
       max: 100.0
     - name: voltage
-      type: INT
-      gen_type: expression
+      type: int
       expr: "220 + 10 * math.sin(_i / 10)"
     - name: phase
-      type: FLOAT
-      gen_type: random
+      type: float
       min: 0.0
       max: 360.0
   generation:
     interlace: 0
     rows_per_table: 10000
     rows_per_batch: 10000
-    num_cached_batches: 10000
 
 jobs:
-  create-db:
-    name: "Create Database"
-    needs: []
+  insert-data:
     steps:
-      - name: "Create tsbench database"
-        uses: tdengine/create-database
+      - uses: tdengine/create-super-table
+      - uses: tdengine/create-child-table
         with:
-          database: "tsbench"
-
-  create-stables:
-    name: "Create Super Tables"
-    needs: [create-db]
-    steps:
-      - name: "Create meters super table"
-        uses: tdengine/create-super-table
-        with:
-          database: "tsbench"
-          name: "meters"
-
-  create-tables:
-    name: "Create Child Tables"
-    needs: [create-stables]
-    steps:
-      - name: "Batch create child tables"
-        uses: tdengine/create-child-table
-        with:
-          database: "tsbench"
           batch:
             size: 1000
             concurrency: 10
-
-  insert-data:
-    name: "Insert Data"
-    needs: [create-tables]
-    steps:
-      - name: "Write data to meters"
-        uses: tdengine/insert
+      - uses: tdengine/insert
         with:
-          database: "tsbench"
-          format: stmt
           concurrency: 8
           time_interval:
             enabled: true
@@ -138,7 +105,7 @@ Import data from existing CSV files.
 ```yaml
 # taosgen-config-csv-import.yaml
 tdengine:
-  dsn: "${TAOSGEN_DSN:-taos+ws://root:taosdata@localhost:6041/tsbench}"
+  dsn: "taos+ws://root:taosdata@localhost:6041/tsbench"
   drop_if_exists: false
 
 schema:
@@ -157,29 +124,27 @@ schema:
       timestamp_offset:
         offset_type: relative
         value: "+10s"
-  tags:
-    - name: groupid
-      type: INT
-    - name: location
-      type: VARCHAR(24)
   columns:
     - name: ts
-      type: TIMESTAMP
+      type: timestamp
     - name: current
-      type: FLOAT
+      type: float
     - name: voltage
-      type: INT
+      type: int
     - name: phase
-      type: FLOAT
+      type: float
+  tags:
+    - name: groupid
+      type: int
+    - name: location
+      type: binary(24)
   generation:
     rows_per_table: 10000
     rows_per_batch: 10000
 
 jobs:
-  import-data:
-    name: "Import from CSV"
+  insert-data:
     steps:
-      - uses: tdengine/create-database
       - uses: tdengine/create-super-table
       - uses: tdengine/create-child-table
       - uses: tdengine/insert
@@ -209,8 +174,8 @@ Publish generated data to MQTT broker.
 # taosgen-config-mqtt-publish.yaml
 mqtt:
   uri: "tcp://localhost:1883"
-  user: "${MQTT_USER:-}"
-  password: "${MQTT_PASS:-}"
+  user: ""
+  password: ""
   client_id: "taosgen"
   keep_alive: 5
   clean_session: true
@@ -223,22 +188,23 @@ schema:
     count: 10000
   tags:
     - name: location
-      type: VARCHAR(32)
-      gen_type: random
-      values: ["factory1", "factory2", "factory3"]
+      type: binary(32)
+      values:
+        - "factory1"
+        - "factory2"
+        - "factory3"
   columns:
     - name: ts
-      type: TIMESTAMP
-      gen_type: order
-      min: 1700000000000
+      type: timestamp
+      start: now + 10s
+      precision: ms
+      step: 1
     - name: temperature
-      type: FLOAT
-      gen_type: random
+      type: float
       min: 20.0
       max: 80.0
     - name: humidity
-      type: FLOAT
-      gen_type: random
+      type: float
       min: 30.0
       max: 90.0
   generation:
@@ -248,12 +214,10 @@ schema:
 
 jobs:
   publish:
-    name: "Publish to MQTT"
     steps:
       - name: "Publish sensor data"
         uses: mqtt/publish
         with:
-          format: json
           concurrency: 8
           topic: "factory/{table}/{location}"
           qos: 1
@@ -287,31 +251,33 @@ schema:
     count: 1000
   tags:
     - name: datacenter
-      type: VARCHAR(16)
-      gen_type: random
-      values: ["dc1", "dc2"]
+      type: binary(16)
+      values:
+        - "dc1"
+        - "dc2"
     - name: rack
-      type: VARCHAR(8)
-      gen_type: random
-      values: ["r1", "r2", "r3", "r4"]
+      type: binary(8)
+      values:
+        - "r1"
+        - "r2"
+        - "r3"
+        - "r4"
   columns:
     - name: ts
-      type: TIMESTAMP
-      gen_type: order
-      min: 1700000000000
+      type: timestamp
+      start: now + 10s
+      precision: ms
+      step: 1
     - name: cpu_usage
-      type: FLOAT
-      gen_type: random
+      type: float
       min: 0.0
       max: 100.0
     - name: memory_usage
-      type: FLOAT
-      gen_type: random
+      type: float
       min: 0.0
       max: 100.0
     - name: disk_io
-      type: INT
-      gen_type: random
+      type: int
       min: 0
       max: 10000
   generation:
@@ -343,9 +309,9 @@ Optimized for maximum write throughput.
 ```yaml
 # taosgen-config-high-concurrency.yaml
 tdengine:
-  dsn: "${TAOSGEN_DSN:-taos+ws://root:taosdata@localhost:6041/tsbench}"
+  dsn: "taos+ws://root:taosdata@localhost:6041/tsbench"
   drop_if_exists: false
-  props: "precision ms vgroups 20"
+  props: "precision 'ms' vgroups 20"
   pool:
     enabled: true
     max_size: 200
@@ -359,46 +325,36 @@ schema:
     count: 100000
   tags:
     - name: gid
-      type: INT
-      gen_type: random
+      type: int
       min: 1
       max: 100
   columns:
     - name: ts
-      type: TIMESTAMP
-      gen_type: order
-      min: 1700000000000
+      type: timestamp
+      start: now + 10s
+      precision: ms
+      step: 1
     - name: value
-      type: DOUBLE
-      gen_type: random
+      type: double
       min: 0.0
       max: 1000000.0
   generation:
     interlace: 1000
     rows_per_table: 100000
     rows_per_batch: 30000
-    num_cached_batches: 50000
     tables_reuse_data: true
 
 jobs:
-  init:
-    name: "Initialize"
+  write:
     steps:
-      - uses: tdengine/create-database
       - uses: tdengine/create-super-table
       - uses: tdengine/create-child-table
         with:
           batch:
             size: 5000
             concurrency: 20
-
-  write:
-    name: "High Concurrency Write"
-    needs: [init]
-    steps:
       - uses: tdengine/insert
         with:
-          format: stmt
           concurrency: 32
           auto_create_table: false
           failure_handling:
@@ -423,49 +379,46 @@ schema:
     count: 1000
   columns:
     - name: ts
-      type: TIMESTAMP
-      gen_type: order
-      min: 1700000000000
+      type: timestamp
+      start: now + 10s
+      precision: ms
+      step: 1
     # Sine wave with noise (simulating AC voltage)
     - name: ac_voltage
-      type: FLOAT
-      gen_type: expression
+      type: float
       expr: "220 * math.sin(_i / 50) + math.random(-10, 10)"
     # Step function (simulating state changes)
     - name: state
-      type: INT
-      gen_type: expression
+      type: int
       expr: "math.floor(_i / 1000) % 4"
     # Decaying exponential (simulating battery drain)
     - name: battery
-      type: FLOAT
-      gen_type: expression
+      type: float
       expr: "100 * math.exp(-_i / 10000) + math.random(-1, 1)"
     # Periodic spike (simulating peak hours)
     - name: load
-      type: FLOAT
-      gen_type: expression
+      type: float
       expr: "((math.sin(_i / 100) + 1) / 2 + ((math.floor(_i / 1440) % 2 == 0) and 0.5 or 0)) * 100"
   generation:
     rows_per_table: 10000
+    rows_per_batch: 10000
 
 jobs:
   write:
     steps:
-      - uses: tdengine/create-database
       - uses: tdengine/create-super-table
       - uses: tdengine/create-child-table
       - uses: tdengine/insert
 ```
 
-## Example 8: Multi-Stage Pipeline
+## Example 8: Multi-Stage Pipeline (DAG)
 
-DAG with multiple dependent jobs.
+For complex scenarios requiring explicit dependencies.
 
 ```yaml
 # taosgen-config-pipeline.yaml
 tdengine:
-  dsn: "${TAOSGEN_DSN:-taos+ws://root:taosdata@localhost:6041/test}"
+  dsn: "taos+ws://root:taosdata@localhost:6041/test"
 
 schema:
   name: "stage_data"
@@ -473,6 +426,7 @@ schema:
     count: 1000
   generation:
     rows_per_table: 10000
+    rows_per_batch: 10000
 
 jobs:
   # Stage 1: Setup
@@ -502,14 +456,7 @@ jobs:
             fixed_interval:
               base_interval: 1000
 
-  # Stage 3: Validation (placeholder for future action)
-  # validate:
-  #   name: "Validate Data"
-  #   needs: [initial-load]
-  #   steps:
-  #     - uses: tdengine/validate
-
-  # Stage 4: Incremental Load
+  # Stage 3: Incremental Load
   incremental-load:
     name: "Incremental Load"
     needs: [initial-load]
@@ -527,4 +474,6 @@ jobs:
 2. **Scale Gradually**: Start with small `count` and `rows_per_table`, then increase
 3. **Monitor Resources**: Watch CPU, memory, and network during high concurrency tests
 4. **Use Checkpoints**: Enable checkpoint for long-running tests to allow resume
-5. **Environment Variables**: Always use `${VAR:-default}` for sensitive information
+5. **Simple First**: Use single job with multiple steps; only use DAG (needs) when truly necessary
+6. **DSN Format**: Use direct string like `taos+ws://root:taosdata@localhost:6041/tsbench`
+7. **Props Format**: Use single quotes for precision value: `precision 'ms'`

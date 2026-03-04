@@ -97,27 +97,30 @@ taosgen -h 192.168.1.100 -c /path/to/config.yaml
 taosgen -h 192.168.1.100 -P 6041 -u root -p "$TAOS_PASSWORD" -c /path/to/config.yaml
 ```
 
-## Environment Variables
+## Password Handling
 
-Suggest setting these before running:
+DSN is configured directly in the YAML file. For security:
+- Default DSN uses default TDengine credentials (root/taosdata)
+- Override password via command line `-p` parameter when running:
+  ```bash
+  taosgen -h localhost -p your_password -c config.yaml
+  ```
 
-```bash
-# For TDengine
-export TAOSGEN_DSN="taos+ws://root:taosdata@localhost:6041/tsbench"
-export TAOS_PASSWORD="taosdata"
+For MQTT/Kafka credentials, configure directly in YAML:
+```yaml
+mqtt:
+  user: "your_mqtt_user"
+  password: "your_mqtt_password"
 
-# For MQTT (if using MQTT action)
-export MQTT_USER="your_mqtt_user"
-export MQTT_PASS="your_mqtt_password"
-
-# For Kafka SASL (if using SASL auth)
-export KAFKA_SASL_USER="your_kafka_user"
-export KAFKA_SASL_PASS="your_kafka_password"
+kafka:
+  rdkafka_options:
+    sasl.username: "your_kafka_user"
+    sasl.password: "your_kafka_password"
 ```
 
 ## Safety
 
-- **Credential Safety**: Never display actual passwords in output. Use environment variable references.
+- **Credential Safety**: Never display actual passwords in command output. Passwords should be entered via command line `-p` parameter or configured directly in YAML file.
 - **Destructive Operation Warning**: If config has `drop_if_exists: true`, warn user about data loss risk.
 - **Resource Warning**: For large-scale tests (tables > 100000, rows > 1000000), warn about resource consumption.
 - **Confirmation**: For potentially destructive operations, ask for explicit confirmation.

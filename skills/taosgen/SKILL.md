@@ -65,9 +65,80 @@ After generating the configuration file, the agent MUST print:
 After suggesting run command, the agent MUST print:
 - `Command: taosgen -h <host> -c /absolute/path/to/config.yaml`
 
+## Correct Configuration Syntax
+
+### Column Definition
+
+**String types with length:**
+```yaml
+- name: location
+  type: binary(24)  # Length in parentheses, NOT separate 'len' field
+  values:
+    - "California.Campbell"
+    - "Texas.Austin"
+```
+
+**Data generation (inferred from keys, NO 'gen_type' prefix):**
+```yaml
+# Random with min/max
+- name: current
+  type: float
+  min: 0.0
+  max: 100.0
+
+# Random with values (YAML array, NOT comma-separated string)
+- name: city
+  type: binary(24)
+  values:
+    - "New York"
+    - "Los Angeles"
+
+# Expression (Lua)
+- name: voltage
+  type: float
+  expr: "220 + 10 * math.sin(_i / 10)"
+
+# Timestamp with step
+- name: ts
+  type: timestamp
+  start: now + 10s
+  precision: ms
+  step: 1
+```
+
+### Generation Control
+
+```yaml
+schema:
+  generation:
+    interlace: 0
+    rows_per_table: 10000
+    rows_per_batch: 10000
+    tables_reuse_data: true
+```
+
+### Simple Job Structure
+
+For sequential execution, use single job with multiple steps (NOT multiple jobs with needs):
+
+```yaml
+jobs:
+  insert-data:
+    steps:
+      - uses: tdengine/create-super-table
+      - uses: tdengine/create-child-table
+        with:
+          batch:
+            size: 1000
+            concurrency: 10
+      - uses: tdengine/insert
+        with:
+          concurrency: 8
+```
+
 ## Safety
 
-- **Password handling**: Never hardcode passwords in generated configs. Use `${ENV_VAR:-default}` format.
+- **Password handling**: DSN should use direct string format. For security, prompt user to set password via taosgen command line `-p` parameter instead of including in config file.
 - **Drop database warning**: If `drop_if_exists: true`, show warning and ask for confirmation.
 - **Destructive operations**: Always confirm before suggesting commands that may delete data.
 
