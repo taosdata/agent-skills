@@ -1,326 +1,195 @@
 ---
 name: taosgen-config
-description: "Generate taosgen YAML configuration for TDengine/MQTT/Kafka benchmarking (taosgen, config, yaml, benchmark, time-series)"
+description: Generate taosgen configuration files for time-series database performance testing. Use this skill when users want to create taosgen configs, benchmark TDengine/MQTT/Kafka, generate test data schemas, set up performance tests, or need help with taosgen YAML configurations. Trigger for phrases like "create taosgen config", "generate benchmark config", "set up TDengine test", "MQTT performance test config", "Kafka load test", or when users mention taosgen, time-series benchmarking, or data generation for testing.
 ---
 
-# taosgen-config
+# taosgen Configuration Generator
 
-Generate taosgen YAML configuration files for performance benchmarking.
+Generate taosgen configuration files for performance testing time-series databases and message brokers.
 
-## When to Use
+## Overview
 
-Use this skill when you need to:
-- Create a taosgen configuration for TDengine write testing
-- Create a taosgen configuration for MQTT message publishing
-- Create a taosgen configuration for Kafka message producing
-- Generate benchmark configs with custom schema and data generation rules
+taosgen is a benchmarking tool that generates data and tests write performance for:
+- **TDengine** - Time-series database
+- **MQTT** - Message broker
+- **Kafka** - Distributed streaming platform
 
-## Input
+Configurations use YAML format with job-based workflows that can form DAG execution flows.
 
-Ask the user for:
+## Documentation Sources
 
-1. **Target Type** (if not specified):
-   - TDengine (default) - Time-series database write testing
-   - MQTT - Message broker publishing
-   - Kafka - Message streaming
+**Primary source (always try first):**
+- **Official documentation:** https://docs.tdengine.com/tdengine-reference/tools/taosgen/
+  - Use WebFetch to get the latest documentation
+  - This has the most up-to-date parameters, features, and examples
+  - If WebFetch fails or returns insufficient information, fall back to local references
 
-2. **Scenario** (optional):
-   - Smart meters (经典智能电表场景)
-   - Server monitoring (服务器监控)
-   - Vehicle tracking (车辆轨迹)
-   - Custom (自定义)
+**Fallback references (use if web fetch fails):**
 
-3. **Scale Parameters**:
-   - Number of tables/devices (default: 10000)
-   - Rows per table (default: 10000)
-   - Batch size (default: 10000)
+This skill includes comprehensive reference documentation organized by target system:
 
-4. **Connection Info**:
-   - For TDengine: host (default: localhost), port (default: 6041), database (default: tsbench)
-   - For MQTT: uri (default: tcp://localhost:1883), user, password
-   - For Kafka: bootstrap_servers (default: localhost:9092), topic
+- **references/tdengine.md** - TDengine configurations, parameters, actions, and examples
+- **references/mqtt.md** - MQTT configurations, parameters, actions, and examples
+- **references/kafka.md** - Kafka configurations, parameters, actions, and examples
+- **references/schema.md** - Schema definition, data generation methods, and CSV import
+- **references/common.md** - Common concepts, job structure, and best practices
 
-5. **Schema Definition** (for custom scenario):
-   - Tags (label columns)
-   - Columns (data columns)
-   - Data generation type (random/order/expression)
+**Documentation strategy:**
+1. Before generating any configuration, try WebFetch on https://docs.tdengine.com/tdengine-reference/tools/taosgen/
+2. If WebFetch succeeds, use that information as primary source
+3. If WebFetch fails or returns incomplete info, read the relevant local reference files:
+   - For TDengine: references/tdengine.md
+   - For MQTT: references/mqtt.md
+   - For Kafka: references/kafka.md
+   - For schema/data: references/schema.md
+   - For job structure: references/common.md
+4. Always verify parameter names and syntax from documentation rather than guessing
 
-## Output
+## Workflow
 
-Generate a YAML configuration file and print:
-```
-OutputPath: /absolute/path/to/taosgen-config-{target}-{scenario}.yaml
-```
+When a user requests a taosgen configuration:
 
-## Configuration Generation Method
+1. **Understand requirements** - Ask clarifying questions:
+   - Target system: TDengine, MQTT, or Kafka?
+   - Data characteristics: tables/devices count, columns/metrics, value ranges
+   - Generation strategy: random, expressions, or CSV import?
+   - Performance goals: concurrency, batch sizes, special features
 
-### Method 1: Use Python Generator Script (Recommended)
+2. **Fetch latest documentation** - Get up-to-date information:
+   - Use WebFetch on https://docs.tdengine.com/tdengine-reference/tools/taosgen/
+   - Ask for comprehensive parameter details, examples, and configuration options
+   - If WebFetch fails or returns insufficient information, read local reference files:
+     - references/tdengine.md (for TDengine)
+     - references/mqtt.md (for MQTT)
+     - references/kafka.md (for Kafka)
+     - references/schema.md (for data generation)
+     - references/common.md (for job structure)
 
-To ensure strict parameter boundaries and avoid hallucinated parameters:
+3. **Generate configuration** - Create complete YAML based on requirements and documentation
 
-```python
-# Use the generator.py script
-from scripts.generator import (
-    generate_smart_meters_tdengine,
-    generate_smart_meters_mqtt,
-    generate_smart_meters_kafka,
-    generate_minimal_tdengine,
-    save_config
-)
+4. **Validate configuration**:
+   - Since taosgen doesn't have dry-run mode, test by running with minimal data:
+   - Create a temporary test config with 10 tables, 10 rows
+   - Run: `timeout 10s taosgen -h {host} -c {test_config} 2>&1 | head -50`
+   - If no "Config validation failed" errors, the config is valid
+   - Clean up temporary files
 
-# Example: Generate TDengine config
-config = generate_smart_meters_tdengine(
-    host="localhost",
-    port=6041,
-    database="tsbench",
-    table_count=1000,
-    rows_per_table=10
-)
+5. **Present and explain**:
+   - Brief summary of what the config does
+   - Complete YAML in a code block
+   - Key highlights explaining important settings
+   - Usage: `taosgen -c config.yaml`
+   - Ask for feedback
 
-# Save and get path
-output_path = save_config(config, "tdengine", "smart-meters")
-print(f"OutputPath: {output_path}")
-```
+6. **Iterate** - Adjust based on user feedback
 
-### Method 2: Manual Template (Use with Caution)
+## Key Principles
 
-If generating manually, strictly follow the parameter definitions in `scripts/schema.json`.
+- **Don't guess parameters** - Always verify from references
+- **Ask naturally** - Don't interrogate; have a conversation and infer from context
+- **Make reasonable assumptions** - Explain your choices when filling gaps
+- **Focus on clarity** - Explain the "why" behind configuration choices
+- **Be concise** - Keep explanations informative but brief
+- **Validate when possible** - Test config with minimal data before presenting
+- **Checkpoint handling** - Only include checkpoint configuration when the user explicitly requests it. Do NOT generate checkpoint settings for `tdengine/create-database` or `tdengine/insert` actions unless specifically asked. Checkpoint is an optional feature for write interruption/recovery and should not be enabled by default.
 
-**IMPORTANT**: Only use parameters listed in the schema. Common mistakes:
-- ❌ `mqtt.broker` - not supported, use `mqtt.uri`
-- ❌ `mqtt.username` - not supported, use `mqtt.user`
-- ❌ `mqtt.qos` - belongs in action `with` section, not mqtt config
-- ❌ `gen_type` - inferred from presence of keys, don't specify explicitly
-- ❌ `len` for string types - use `type: binary(24)` format
+## Configuration Structure
 
-## Configuration Template
-
-### TDengine Basic
+All taosgen configs follow this basic structure:
 
 ```yaml
-# Generated by taosgen-config skill
-# Version: 0.1.0
-# Target: tdengine
-# Generated at: {timestamp}
-
+# Target system configuration (choose one)
 tdengine:
-  dsn: "taos+ws://root:taosdata@{host}:{port}/{database}"
-  drop_if_exists: false
-  props: "precision 'ms' vgroups 4"
-  pool:
-    enabled: true
-    max_size: 100
-    min_size: 2
-    timeout: 1000
+  dsn: connection_string
+  # ... system-specific parameters
 
-schema:
-  name: "meters"
-  tbname:
-    prefix: "d"
-    count: {table_count}
-    from: 0
-  tags:
-    - name: groupid
-      type: int
-      min: 1
-      max: 10
-    - name: location
-      type: binary(24)
-      values:
-        - "California.Campbell"
-        - "Texas.Austin"
-  columns:
-    - name: ts
-      type: timestamp
-      start: now
-      precision: ms
-      step: 1
-    - name: current
-      type: float
-      min: 0.0
-      max: 100.0
-    - name: voltage
-      type: int
-      expr: "220 + 10 * math.sin(_i / 10)"
-    - name: phase
-      type: float
-      min: 0.0
-      max: 360.0
-  generation:
-    interlace: 0
-    rows_per_table: {rows_per_table}
-    rows_per_batch: {rows_per_batch}
-
-jobs:
-  insert:
-    steps:
-      - uses: tdengine/create-super-table
-      - uses: tdengine/create-child-table
-        with:
-          batch:
-            size: 1000
-            concurrency: 10
-      - uses: tdengine/insert
-        with:
-          concurrency: 8
-```
-
-### MQTT Basic
-
-```yaml
 mqtt:
-  uri: "tcp://localhost:1883"
-  user: ""
-  password: ""
-  client_id: "taosgen"
-  keep_alive: 5
-  clean_session: true
-  max_buffered_messages: 10000
+  uri: broker_address
+  # ... system-specific parameters
 
+kafka:
+  bootstrap_servers: broker_list
+  # ... system-specific parameters
+
+# Data schema definition
 schema:
-  name: "meters"
+  name: table_name
   tbname:
-    prefix: "d"
-    count: 10000
+    prefix: prefix
+    count: number
+    from: start_index  # integer starting index for numbering, e.g., 0 or 1
   columns:
-    - name: ts
-      type: timestamp
-      start: "1700000000000"
-      precision: ms
-      step: "300s"
-    - name: current
-      type: float
-      min: 0
-      max: 100
-    - name: voltage
-      type: int
-      expr: "220 * math.sqrt(2) * math.sin(_i)"
+    - name: column_name
+      type: data_type
+      # ... generation parameters (gen_type is optional, defaults to 'random',
+      #    auto-inferred as 'expression' if 'expr' attribute is present)
   tags:
-    - name: groupid
-      type: int
-      min: 1
-      max: 10
-    - name: location
-      type: varchar(20)
-      values:
-        - Chicago
-        - Houston
-        - Phoenix
+    - name: tag_name
+      type: data_type
+      # ... generation parameters
   generation:
     interlace: 1
-    rows_per_table: 10000
-    rows_per_batch: 10000
+    rows_per_table: count
+    rows_per_batch: size
 
+# Job workflow
 jobs:
-  publish:
+  job-name:
+    needs: [dependencies]
     steps:
-      - uses: mqtt/publish
+      - uses: action-name
         with:
-          concurrency: 8
-          topic: "factory/{table}/{location}"
-          qos: 1
+          parameter: value
 ```
 
-## Column Definition Syntax
+For detailed parameters, actions, and examples, consult the reference files.
 
-### String Types with Length
+## Common Validation Errors
 
-Use length in parentheses:
-```yaml
-- name: location
-  type: binary(24)  # or varchar(50)
-  values:
-    - "California.Campbell"
-    - "Texas.Austin"
-```
+If validation fails, check for these common mistakes:
 
-### Data Generation (Inferred from Keys)
+| Error | Cause | Fix |
+|-------|-------|-----|
+| Unknown key: broker | Using wrong param name | Use `uri` instead of `broker` (MQTT) |
+| Unknown key: username | Using wrong param name | Use `user` instead of `username` (MQTT) |
+| precision without quotes | Missing quotes in props | Use `precision 'ms'` with single quotes |
+| gen_type not allowed | Invalid gen_type value or configuration conflict | Valid gen_type values: `random`, `order`, `expression`. Note: gen_type can often be omitted as it will be auto-inferred: `random` (default), `expression` (if `expr` attribute is present) |
+| rows_per_table not found | Wrong parameter name | Use `rows_per_table` not `per_table_rows` |
 
-**Random with min/max:**
-```yaml
-- name: current
-  type: float
-  min: 0.0
-  max: 100.0
-```
+## Common Use Cases
 
-**Random with values list:**
-```yaml
-- name: location
-  type: binary(24)
-  values:
-    - "New York"
-    - "Los Angeles"
-    - "Chicago"
-```
+**TDengine performance test:**
+- Fetch latest docs from https://docs.tdengine.com/tdengine-reference/tools/taosgen/ or read references/tdengine.md
+- Create super table, insert data with high concurrency
+- Use stmt format for best performance
 
-**Expression (Lua):**
-```yaml
-- name: voltage
-  type: float
-  expr: "220 + 10 * math.sin(_i / 10)"
-```
+**CSV data import:**
+- Fetch latest docs or read references/schema.md for CSV configuration
+- Read references/tdengine.md for TDengine-specific setup
+- Configure timestamp offsets and column mapping
 
-**Timestamp with step:**
-```yaml
-- name: ts
-  type: timestamp
-  start: now
-  precision: ms
-  step: 1
-```
+**MQTT real-time simulation:**
+- Fetch latest docs or read references/mqtt.md
+- Configure dynamic topics and QoS levels
+- Batch messages for throughput
 
-## Valid Action Parameters
+**Kafka load testing:**
+- Fetch latest docs or read references/kafka.md
+- Enable compression and batching
+- Configure acknowledgment levels
 
-### mqtt/publish
+## Output Format
 
-```yaml
-- uses: mqtt/publish
-  with:
-    concurrency: 8
-    topic: "factory/{table}/{location}"
-    qos: 0|1|2
-    retain: true|false
-    records_per_message: 1
-    # Also supports: failure_handling, time_interval
-```
+Present configurations in this structure:
 
-### kafka/produce
-
-```yaml
-- uses: kafka/produce
-  with:
-    concurrency: 8
-    key_pattern: "{table}"
-    key_serializer: "string-utf8"
-    value_serializer: "json"  # or "influx"
-    acks: "0|1|all"
-    compression: "none|gzip|snappy|lz4|zstd"
-    records_per_message: 1
-    # Also supports: failure_handling, time_interval
-```
-
-### tdengine/insert
-
-```yaml
-- uses: tdengine/insert
-  with:
-    concurrency: 8
-    format: stmt  # or "sql"
-    auto_create_table: false
-    # Also supports: failure_handling, time_interval, checkpoint
-```
-
-## Safety
-
-- **Password Security**: DSN uses default credentials (root/taosdata) for testing. For production, override password via command line `-p` parameter when running taosgen.
-- **Drop Database Warning**: If `drop_if_exists: true` is requested, show warning and ask for confirmation.
-- **Data Loss Prevention**: Default `drop_if_exists: false` to prevent accidental data loss.
-- **Parameter Strictness**: Use only parameters defined in `scripts/schema.json`. Do NOT hallucinate unsupported parameters.
+1. **Summary** - One sentence describing what this config does
+2. **Complete YAML** - Full configuration in a code block
+3. **Validation** - Brief note if config was tested (e.g., "✅ Config validated with taosgen")
+4. **Key highlights** - 2-4 bullet points explaining important settings and why
+5. **Usage** - Command to run: `taosgen -c config.yaml`
+6. **Feedback** - "Does this match your requirements? Any adjustments needed?"
 
 ## References
 
-- `taosgen/references/CONFIG.md` - Detailed configuration guide
-- `taosgen/references/EXAMPLES.md` - Configuration examples library
-- `taosgen/scripts/generator.py` - Python generator with strict validation
-- `taosgen/scripts/schema.json` - JSON Schema for validation
+- **Official docs:** https://docs.tdengine.com/tdengine-reference/tools/taosgen/
+- **Local refs:** references/{tdengine,mqtt,kafka,schema,common}.md
