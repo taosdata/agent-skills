@@ -35,11 +35,10 @@ Ask the user for:
    - Rows per table (default: 10000)
    - Batch size (default: 10000)
 
-4. **Connection Info** (for TDengine):
-   - Host (default: localhost)
-   - Port (default: 6041 for WebSocket)
-   - Database name (default: tsbench)
-   - Use environment variable for password: `${TAOS_PASSWORD:-taosdata}`
+4. **Connection Info**:
+   - For TDengine: host (default: localhost), port (default: 6041), database (default: tsbench)
+   - For MQTT: uri (default: tcp://localhost:1883), user, password
+   - For Kafka: bootstrap_servers (default: localhost:9092), topic
 
 5. **Schema Definition** (for custom scenario):
    - Tags (label columns)
@@ -53,15 +52,46 @@ Generate a YAML configuration file and print:
 OutputPath: /absolute/path/to/taosgen-config-{target}-{scenario}.yaml
 ```
 
-## Steps
+## Configuration Generation Method
 
-1. Determine target type and scenario from user input or infer from context
-2. Collect parameters (use defaults where not specified)
-3. Generate YAML configuration following taosgen specification
-4. Add header comment with generation metadata
-5. Validate YAML syntax
-6. Write to file in current directory or `configs/` subdirectory
-7. Print output path and usage instructions
+### Method 1: Use Python Generator Script (Recommended)
+
+To ensure strict parameter boundaries and avoid hallucinated parameters:
+
+```python
+# Use the generator.py script
+from scripts.generator import (
+    generate_smart_meters_tdengine,
+    generate_smart_meters_mqtt,
+    generate_smart_meters_kafka,
+    generate_minimal_tdengine,
+    save_config
+)
+
+# Example: Generate TDengine config
+config = generate_smart_meters_tdengine(
+    host="localhost",
+    port=6041,
+    database="tsbench",
+    table_count=1000,
+    rows_per_table=10
+)
+
+# Save and get path
+output_path = save_config(config, "tdengine", "smart-meters")
+print(f"OutputPath: {output_path}")
+```
+
+### Method 2: Manual Template (Use with Caution)
+
+If generating manually, strictly follow the parameter definitions in `scripts/schema.json`.
+
+**IMPORTANT**: Only use parameters listed in the schema. Common mistakes:
+- ❌ `mqtt.broker` - not supported, use `mqtt.uri`
+- ❌ `mqtt.username` - not supported, use `mqtt.user`
+- ❌ `mqtt.qos` - belongs in action `with` section, not mqtt config
+- ❌ `gen_type` - inferred from presence of keys, don't specify explicitly
+- ❌ `len` for string types - use `type: binary(24)` format
 
 ## Configuration Template
 
@@ -84,22 +114,45 @@ tdengine:
     timeout: 1000
 
 schema:
-  name: "{table_name}"
+  name: "meters"
   tbname:
     prefix: "d"
     count: {table_count}
     from: 0
   tags:
-    {tags_definition}
+    - name: groupid
+      type: int
+      min: 1
+      max: 10
+    - name: location
+      type: binary(24)
+      values:
+        - "California.Campbell"
+        - "Texas.Austin"
   columns:
-    {columns_definition}
+    - name: ts
+      type: timestamp
+      start: now
+      precision: ms
+      step: 1
+    - name: current
+      type: float
+      min: 0.0
+      max: 100.0
+    - name: voltage
+      type: int
+      expr: "220 + 10 * math.sin(_i / 10)"
+    - name: phase
+      type: float
+      min: 0.0
+      max: 360.0
   generation:
     interlace: 0
     rows_per_table: {rows_per_table}
     rows_per_batch: {rows_per_batch}
 
 jobs:
-  insert-data:
+  insert:
     steps:
       - uses: tdengine/create-super-table
       - uses: tdengine/create-child-table
@@ -112,6 +165,62 @@ jobs:
           concurrency: 8
 ```
 
+### MQTT Basic
+
+```yaml
+mqtt:
+  uri: "tcp://localhost:1883"
+  user: ""
+  password: ""
+  client_id: "taosgen"
+  keep_alive: 5
+  clean_session: true
+  max_buffered_messages: 10000
+
+schema:
+  name: "meters"
+  tbname:
+    prefix: "d"
+    count: 10000
+  columns:
+    - name: ts
+      type: timestamp
+      start: "1700000000000"
+      precision: ms
+      step: "300s"
+    - name: current
+      type: float
+      min: 0
+      max: 100
+    - name: voltage
+      type: int
+      expr: "220 * math.sqrt(2) * math.sin(_i)"
+  tags:
+    - name: groupid
+      type: int
+      min: 1
+      max: 10
+    - name: location
+      type: varchar(20)
+      values:
+        - Chicago
+        - Houston
+        - Phoenix
+  generation:
+    interlace: 1
+    rows_per_table: 10000
+    rows_per_batch: 10000
+
+jobs:
+  publish:
+    steps:
+      - uses: mqtt/publish
+        with:
+          concurrency: 8
+          topic: "factory/{table}/{location}"
+          qos: 1
+```
+
 ## Column Definition Syntax
 
 ### String Types with Length
@@ -119,7 +228,7 @@ jobs:
 Use length in parentheses:
 ```yaml
 - name: location
-  type: binary(24)
+  type: binary(24)  # or varchar(50)
   values:
     - "California.Campbell"
     - "Texas.Austin"
@@ -145,23 +254,6 @@ Use length in parentheses:
     - "Chicago"
 ```
 
-**Order (sequential):**
-```yaml
-- name: id
-  type: int
-  min: 1
-  max: 1000000
-```
-
-**Timestamp with step:**
-```yaml
-- name: ts
-  type: timestamp
-  start: now + 10s
-  precision: ms
-  step: 1
-```
-
 **Expression (Lua):**
 ```yaml
 - name: voltage
@@ -169,14 +261,66 @@ Use length in parentheses:
   expr: "220 + 10 * math.sin(_i / 10)"
 ```
 
+**Timestamp with step:**
+```yaml
+- name: ts
+  type: timestamp
+  start: now
+  precision: ms
+  step: 1
+```
+
+## Valid Action Parameters
+
+### mqtt/publish
+
+```yaml
+- uses: mqtt/publish
+  with:
+    concurrency: 8
+    topic: "factory/{table}/{location}"
+    qos: 0|1|2
+    retain: true|false
+    records_per_message: 1
+    # Also supports: failure_handling, time_interval
+```
+
+### kafka/produce
+
+```yaml
+- uses: kafka/produce
+  with:
+    concurrency: 8
+    key_pattern: "{table}"
+    key_serializer: "string-utf8"
+    value_serializer: "json"  # or "influx"
+    acks: "0|1|all"
+    compression: "none|gzip|snappy|lz4|zstd"
+    records_per_message: 1
+    # Also supports: failure_handling, time_interval
+```
+
+### tdengine/insert
+
+```yaml
+- uses: tdengine/insert
+  with:
+    concurrency: 8
+    format: stmt  # or "sql"
+    auto_create_table: false
+    # Also supports: failure_handling, time_interval, checkpoint
+```
+
 ## Safety
 
-- **Password Security**: Never hardcode actual passwords. Always use `${ENV_VAR:-default}` format.
+- **Password Security**: DSN uses default credentials (root/taosdata) for testing. For production, override password via command line `-p` parameter when running taosgen.
 - **Drop Database Warning**: If `drop_if_exists: true` is requested, show warning and ask for confirmation.
 - **Data Loss Prevention**: Default `drop_if_exists: false` to prevent accidental data loss.
-- **Path Safety**: Use absolute paths in generated configs to avoid working directory confusion.
+- **Parameter Strictness**: Use only parameters defined in `scripts/schema.json`. Do NOT hallucinate unsupported parameters.
 
 ## References
 
 - `taosgen/references/CONFIG.md` - Detailed configuration guide
 - `taosgen/references/EXAMPLES.md` - Configuration examples library
+- `taosgen/scripts/generator.py` - Python generator with strict validation
+- `taosgen/scripts/schema.json` - JSON Schema for validation

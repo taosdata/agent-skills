@@ -37,6 +37,69 @@ If still ambiguous, ask a single clarification question:
 - Config generation → use `taosgen-config` skill
 - Run assistance → use `taosgen-run` skill
 
+## Configuration Generation Method (Rigorous Approach)
+
+To avoid generating invalid parameters, use the code-based approach:
+
+### Option 1: Python Script (Recommended)
+
+Use the provided generator script: `scripts/generator.py`
+
+```python
+from scripts.generator import (
+    generate_smart_meters_tdengine,
+    generate_smart_meters_mqtt,
+    generate_smart_meters_kafka,
+    generate_yaml,
+    save_config,
+    validate_config
+)
+
+# Generate TDengine config
+config = generate_smart_meters_tdengine(
+    host="localhost",
+    port=6041,
+    database="tsbench",
+    table_count=1000,
+    rows_per_table=10
+)
+
+# Validate
+errors = validate_config(config, "tdengine")
+if errors:
+    print("Validation errors:", errors)
+else:
+    # Generate YAML
+    yaml_output = generate_yaml(config, "tdengine", "smart-meters")
+    print(yaml_output)
+
+    # Or save to file
+    path = save_config(config, "tdengine", "smart-meters", "output.yaml")
+    print(f"OutputPath: {path}")
+```
+
+### Option 2: JSON Schema Validation
+
+Use `scripts/schema.json` for strict validation:
+
+```python
+import json
+import yaml
+from jsonschema import validate, ValidationError
+
+# Load schema
+with open('scripts/schema.json') as f:
+    schema = json.load(f)
+
+# Validate config
+config = yaml.safe_load(open('config.yaml'))
+try:
+    validate(instance=config, schema=schema)
+    print("Validation: PASSED")
+except ValidationError as e:
+    print(f"Validation error: {e.message}")
+```
+
 ## Common Engineering Conventions (MUST)
 
 ### Category Detection
@@ -65,85 +128,119 @@ After generating the configuration file, the agent MUST print:
 After suggesting run command, the agent MUST print:
 - `Command: taosgen -h <host> -c /absolute/path/to/config.yaml`
 
-## Correct Configuration Syntax
+## Parameter Reference (Strict Boundaries)
 
-### Column Definition
+### MQTT Config (ONLY these parameters are supported)
 
-**String types with length:**
 ```yaml
-- name: location
-  type: binary(24)  # Length in parentheses, NOT separate 'len' field
-  values:
-    - "California.Campbell"
-    - "Texas.Austin"
+mqtt:
+  uri: "tcp://localhost:1883"      # Broker URI (REQUIRED)
+  user: ""                          # Username (optional)
+  password: ""                      # Password (optional)
+  client_id: "taosgen"              # Client ID prefix
+  keep_alive: 5                     # Keep alive in seconds
+  clean_session: true               # Clean session flag
+  max_buffered_messages: 10000      # Max buffered messages
 ```
 
-**Data generation (inferred from keys, NO 'gen_type' prefix):**
+**INVALID parameters** (will cause errors):
+- `broker` - use `uri`
+- `username` - use `user`
+- `qos` - belongs in action `with` section, not mqtt config
+- `retain` - belongs in action `with` section
+- `timeout` - not supported
+
+### Kafka Config
+
 ```yaml
-# Random with min/max
-- name: current
-  type: float
-  min: 0.0
-  max: 100.0
-
-# Random with values (YAML array, NOT comma-separated string)
-- name: city
-  type: binary(24)
-  values:
-    - "New York"
-    - "Los Angeles"
-
-# Expression (Lua)
-- name: voltage
-  type: float
-  expr: "220 + 10 * math.sin(_i / 10)"
-
-# Timestamp with step
-- name: ts
-  type: timestamp
-  start: now + 10s
-  precision: ms
-  step: 1
+kafka:
+  bootstrap_servers: "localhost:9092"  # REQUIRED
+  client_id: "taosgen"                  # optional
+  topic: "test-topic"                   # REQUIRED
+  rdkafka_options:                      # optional
+    security.protocol: "plaintext"
+    sasl.mechanism: "PLAIN"
+    sasl.username: "user"
+    sasl.password: "pass"
 ```
+
+### TDengine Config
+
+```yaml
+tdengine:
+  dsn: "taos+ws://root:taosdata@localhost:6041/tsbench"  # REQUIRED
+  drop_if_exists: false                                    # optional
+  props: "precision 'ms' vgroups 4"                       # optional
+  pool:                                                    # optional
+    enabled: true
+    max_size: 100
+    min_size: 2
+    timeout: 1000
+```
+
+**Note**: `props` value must have single quotes around precision, e.g., `precision 'ms'`
 
 ### Generation Control
 
 ```yaml
 schema:
   generation:
-    interlace: 0
-    rows_per_table: 10000
-    rows_per_batch: 10000
-    tables_reuse_data: true
+    interlace: 0              # integer >= 0
+    rows_per_table: 10000     # integer >= 1
+    rows_per_batch: 10000     # integer >= 1
+    num_cached_batches: 0     # integer >= 0 (0 = disabled)
+    tables_reuse_data: true   # boolean
 ```
 
-### Simple Job Structure
-
-For sequential execution, use single job with multiple steps (NOT multiple jobs with needs):
+### Column Definition (gen_type is INFERRED)
 
 ```yaml
-jobs:
-  insert-data:
-    steps:
-      - uses: tdengine/create-super-table
-      - uses: tdengine/create-child-table
-        with:
-          batch:
-            size: 1000
-            concurrency: 10
-      - uses: tdengine/insert
-        with:
-          concurrency: 8
+# Random generation (inferred from min/max)
+- name: current
+  type: float
+  min: 0.0
+  max: 100.0
+
+# Random from values (inferred from values)
+- name: location
+  type: binary(24)
+  values:
+    - "California"
+    - "Texas"
+
+# Expression (inferred from expr)
+- name: voltage
+  type: float
+  expr: "220 + 10 * math.sin(_i / 10)"
+
+# Order/timestamp (inferred from step)
+- name: ts
+  type: timestamp
+  start: now
+  precision: ms
+  step: 1
 ```
+
+### Valid Actions
+
+- `tdengine/create-database`
+- `tdengine/create-super-table`
+- `tdengine/create-child-table`
+- `tdengine/insert`
+- `mqtt/publish`
+- `kafka/produce`
 
 ## Safety
 
-- **Password handling**: DSN should use direct string format. For security, prompt user to set password via taosgen command line `-p` parameter instead of including in config file.
+- **Password handling**: DSN should use default credentials for testing. For production, override password via command line `-p` parameter when running taosgen.
 - **Drop database warning**: If `drop_if_exists: true`, show warning and ask for confirmation.
 - **Destructive operations**: Always confirm before suggesting commands that may delete data.
+- **Parameter strictness**: Only use parameters defined in schema.json. Do not hallucinate unsupported parameters.
 
 ## References
 
 - `references/CONFIG.md` - Detailed config generation guide
 - `references/RUN.md` - Detailed run assistance guide
 - `references/EXAMPLES.md` - Configuration examples library
+- `scripts/generator.py` - Python generator with strict parameter validation
+- `scripts/schema.json` - JSON Schema for configuration validation
