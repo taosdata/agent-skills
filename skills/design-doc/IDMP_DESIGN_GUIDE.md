@@ -360,10 +360,11 @@ Rules for the right-side icon buttons (each is a `.tda-icon-btn`, 36×36px):
 
 Key rules:
 - The **column configuration button is always the rightmost** icon in the toolbar.
-- The **download/export CSV button is always present** on every table view.
+- The **download/export CSV button is always present** on every table (list) view. **Exception: panel/card views** (i.e. when the toolbar contains a grid/card toggle and the current view is the card layout) do **not** require the download CSV button.
 - If `+` (add) exists, it is the **leftmost** icon button, before all others.
 - All icon buttons must be wrapped in `el-tooltip` with `effect="dark"` and a descriptive label.
-- Icon buttons are separated by `margin-left: $layout-space` from each other.
+- **Icon button spacing must be uniform:** the right-side icon button group must use `display: flex; gap: $layout-space` — never mix `margin-left` on individual buttons, which produces uneven gaps. Every gap between adjacent icons must be identical.
+- **The "Back" icon tooltip text must be exactly `"Back to the List"`** — never `"back"`, `"Back"`, `"Go back"`, or any other variant. This applies to any sub-toolbar navigation icon that returns the user to a list/table view.
 
 #### 5.2.3 Row Actions — Three-dot Context Menu
 

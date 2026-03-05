@@ -60,10 +60,12 @@ Full reference: [DESIGN_GUIDE.md](../../frontend/DESIGN_GUIDE.md)
    [filter dropdowns]  [+Add]  [↑Import]  [↓Export CSV]  [🔍Search]  [⊞View]  [↻Refresh]  [⚙Columns]
    ```
    - `+` (Add) is always the **leftmost** icon button, if creation is supported
-   - `↓` Export/Download CSV is **always present** on every table
+   - `↓` Export/Download CSV is **always present** on every **list/table** view. **Exception: panel/card views** (when the current view mode is the card layout) do **not** require the download CSV button.
    - `↻` Refresh is **always present**
    - `⚙` Column config is **always the rightmost** icon — no exceptions
    - Every icon button: `.tda-icon-btn` (36×36px), wrapped in `el-tooltip effect="dark"`
+   - **Icon spacing must be uniform:** use `display: flex; gap: $layout-space` on the icon button container — never set `margin-left` on individual buttons, which creates uneven gaps
+   - **"Back" icon tooltip must be exactly `"Back to the List"`** — never `"back"`, `"Back"`, `"Go back"`, or any other wording
 
    **Row three-dot menu:**
    - Every row has a `⋮` (MoreFilled) `.circle-hover` button as the **rightmost cell** (48px fixed column, no header label)
@@ -125,7 +127,7 @@ Full reference: [DESIGN_GUIDE.md](../../frontend/DESIGN_GUIDE.md)
     $layout-space-l-r: calc(24 * 100vw / 1920);   // ~24px at 1920px
     $content-space: 10px;
     ```
-    Use `$layout-space` for gaps between toolbar buttons, not fixed px.
+    Use `$layout-space` as the `gap` value on the toolbar icon button flex container — not fixed px, not per-button `margin-left`.
 
 12. **Pagination:** always use `el-pagination` with `size="small"` + show-total + go-to field.
 
@@ -230,9 +232,11 @@ Before finishing any new page/feature, verify:
 - [ ] Row text `rgb(77,105,146)`, height 42px, `cursor: pointer`
 - [ ] Only link cells are primary blue; plain data cells are `#343537`
 - [ ] Rightmost toolbar button is `⚙` column config
-- [ ] `↓` Export CSV button is present in toolbar
+- [ ] `↓` Export CSV button is present in toolbar **unless** this is a panel/card view
 - [ ] `↻` Refresh button is present in toolbar
 - [ ] `+` Add is leftmost icon button (if creation supported)
+- [ ] Toolbar icon buttons use `display: flex; gap: $layout-space` — not per-button `margin-left`
+- [ ] Any "Back" navigation icon tooltip is exactly `"Back to the List"`
 - [ ] Every row has `⋮` three-dot button as rightmost cell (48px fixed column)
 - [ ] `⋮` dropdown: Delete is last item, in `--tda-color-danger` color
 - [ ] All data columns use `min-width` wide enough to show full header label
