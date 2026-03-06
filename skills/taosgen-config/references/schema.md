@@ -424,7 +424,7 @@ meter0002,x,y,2,Shanghai
 meter0003,x,y,1,Shenzhen
 ```
 
-With `tbname_index: 0` and `exclude_indices: [1, 2]`, this reads:
+With `tbname_index: 0` and `exclude_indices: "1, 2"`, this reads:
 - Table name from column 0
 - Skip columns 1 and 2
 - Read groupid from column 3

@@ -392,7 +392,6 @@ schema:
     tags:
       file_path: /data/tags.csv
       tbname_index: 0
-      exclude_indices: []
     columns:
       file_path: /data/timeseries.csv
       tbname_index: 0
