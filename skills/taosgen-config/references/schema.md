@@ -23,7 +23,7 @@ schema:
     interlace: 1
     rows_per_table: count
     rows_per_batch: size
-    tables_reuse_data: false
+    tables_reuse_data: true
     num_cached_batches: 0
 ```
 

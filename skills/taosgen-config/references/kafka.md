@@ -534,7 +534,7 @@ taosgen produces messages in JSON format. Each message contains one or more reco
 - Moderate batching (10-100 records)
 - Use `gzip` or `zstd` compression
 - Lower concurrency (4-8)
-- Enable idempotence on broker
+- Enable idempotence in producer (e.g., `enable.idempotence=true`)
 
 **For balanced performance:**
 - Use `acks: 1` (leader only)

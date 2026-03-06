@@ -197,8 +197,7 @@ jobs:
 ```yaml
 checkpoint:
   enabled: true
-  file_path: /tmp/checkpoint.json
-  save_interval: 30s
+  interval_sec: 30
 ```
 
 **Configure failure handling:**
@@ -218,7 +217,7 @@ Goal: Test maximum write throughput.
 **Configuration:**
 - High concurrency (16-20)
 - Large batches (20000-50000)
-- Auto-create tables
+- Pre-creates tables
 - No checkpoints or special timing
 
 **Example:**
