@@ -124,8 +124,11 @@ Inserts data into tables.
   - `stmt`: Prepared statement (faster, recommended)
   - `sql`: SQL text
 
-- **auto_create_table**: Boolean - create tables automatically during insert (optional)
-  - Set to `true` to skip the `create-child-table` step
+- **auto_create_table**: Boolean - create tables automatically during insert (optional, default: `false`)
+  - Set to `true` only when explicitly requested for convenience
+  - **Performance note**: Auto-creating tables during insert is SLOWER than pre-creating tables
+  - When `false` (default), generate a separate `tdengine/create-child-table` step before insert
+  - When `true`, skip `create-child-table` step (convenient but lower performance)
   - Requires tags to be defined in schema
 
 - **time_interval**: Control write timing (optional)
@@ -153,76 +156,9 @@ Inserts data into tables.
 
 ## Complete Examples
 
-### Example 1: Basic Performance Test
+### Example 1: Basic Performance Test (Optimal Performance - Default)
 
-High-throughput benchmark with auto-created tables.
-
-```yaml
-tdengine:
-  dsn: taos+ws://root:taosdata@127.0.0.1:6041/benchmark
-  drop_if_exists: true
-  props: precision 'us' vgroups 8
-
-schema:
-  name: meters
-  tbname:
-    prefix: d
-    count: 100000
-    from: 0
-  columns:
-    - name: ts
-      type: timestamp
-      start: now
-      precision: us
-      step: 1
-    - name: current
-      type: float
-      min: 0
-      max: 100
-    - name: voltage
-      type: int
-      min: 200
-      max: 240
-    - name: phase
-      type: float
-      expr: _i * math.pi % 180
-  tags:
-    - name: groupid
-      type: int
-      min: 1
-      max: 10
-    - name: location
-      type: binary(24)
-      values:
-        - Beijing
-        - Shanghai
-        - Shenzhen
-        - Guangzhou
-  generation:
-    interlace: 1
-    rows_per_table: 1000
-    rows_per_batch: 10000
-
-jobs:
-  insert-data:
-    steps:
-      - uses: tdengine/create-super-table
-      - uses: tdengine/insert
-        with:
-          concurrency: 16
-          format: stmt
-          auto_create_table: true
-```
-
-**Key points:**
-- Uses `auto_create_table: true` to skip separate table creation
-- High concurrency (16 threads) for maximum throughput
-- `stmt` format for best performance
-- 8 vgroups for good write parallelism
-
-### Example 2: Separate Table Creation
-
-Explicit table creation before data insertion.
+High-throughput benchmark using pre-created tables (best performance).
 
 ```yaml
 tdengine:
@@ -275,18 +211,110 @@ jobs:
             concurrency: 10
       - uses: tdengine/insert
         with:
-          concurrency: 8
+          concurrency: 16
           format: stmt
+
 ```
 
 **Key points:**
-- Separate table creation step for better control
+- Pre-creates child tables using `create-child-table` for optimal performance (default)
+- High concurrency (16 threads) for maximum throughput
+- `stmt` format for best performance
+- 8 vgroups for good write parallelism
+
+### Example 2: Multi-Stage Performance Test (Pre-create Tables with Convenience Alternative)
+
+Multi-job workflow showing both optimal performance (default) and convenience mode alternatives.
+
+```yaml
+tdengine:
+  dsn: taos+ws://root:taosdata@127.0.0.1:6041/benchmark
+  drop_if_exists: true
+  props: precision 'us' vgroups 8
+
+schema:
+  name: meters
+  tbname:
+    prefix: d
+    count: 100000
+    from: 0
+  columns:
+    - name: ts
+      type: timestamp
+      start: now
+      precision: us
+      step: 1
+    - name: current
+      type: float
+      min: 0
+      max: 100
+    - name: voltage
+      type: int
+      min: 200
+      max: 240
+    - name: phase
+      type: float
+      expr: _i * math.pi % 180
+  tags:
+    - name: groupid
+      type: int
+      min: 1
+      max: 10
+    - name: location
+      type: binary(24)
+      values:
+        - Beijing
+        - Shanghai
+        - Shenzhen
+        - Guangzhou
+  generation:
+    interlace: 1
+    rows_per_table: 1000
+    rows_per_batch: 10000
+
+jobs:
+  create-tables:
+    needs: [setup]
+    steps:
+      - uses: tdengine/create-super-table
+      - uses: tdengine/create-child-table
+        with:
+          batch:
+            size: 1000
+            concurrency: 10
+
+  insert-data:
+    needs: [create-tables]
+    steps:
+      - uses: tdengine/insert
+        with:
+          concurrency: 16
+          format: stmt
+          # auto_create_table: false  # Default - pre-created tables for better performance
+
+```
+
+**Key points:**
+- Separate table creation step for optimal performance (default behavior)
 - Connection pooling enabled for efficiency
 - Batch table creation with 1000 tables per batch
 
-### Example 3: Long-Running Test with Checkpoint
+**Alternative - Convenience Mode (only when explicitly requested):**
+```yaml
+jobs:
+  quick-setup:
+    steps:
+      - uses: tdengine/create-super-table
+      - uses: tdengine/insert
+        with:
+          concurrency: 8
+          format: stmt
+          auto_create_table: true  # Only when user explicitly requests convenience over performance
+```
 
-Resumable test for large data volumes.
+### Example 3: Long-Running Test with Checkpoint (Convenience Mode)
+
+Resumable test for large data volumes using auto-create (convenience mode - only use when explicitly requested).
 
 ```yaml
 tdengine:
@@ -324,11 +352,13 @@ jobs:
   insert-data:
     steps:
       - uses: tdengine/create-super-table
+      # Note: Using auto_create_table for convenience (slower than pre-creating)
+      # Only use this mode when explicitly requested
       - uses: tdengine/insert
         with:
           concurrency: 20
           format: stmt
-          auto_create_table: true
+          auto_create_table: true  # Convenience mode - slower performance
           checkpoint:
             enabled: true
             interval_sec: 30
@@ -339,6 +369,8 @@ jobs:
 ```
 
 **Key points:**
+- **Convenience Mode**: Uses `auto_create_table: true` (only when explicitly requested)
+- For better performance, use separate `create-child-table` step (Example 1 or 2)
 - Checkpoint enabled for resumability (supports `enabled` and `interval_sec`)
 - Large batch size (50000) for efficiency
 - Failure handling with retries
@@ -409,17 +441,19 @@ jobs:
 - Uses `from_csv` to load data from files
 - Timestamp offset adjusts CSV timestamps
 - `rows_per_table: -1` means read all rows from CSV
+- Pre-creates child tables for optimal performance (default behavior)
 - See references/schema.md for detailed CSV configuration
 
 ## Performance Tuning
 
 **For maximum throughput:**
+- Pre-create child tables using `create-child-table` step (default `auto_create_table: false`)
 - Use `format: stmt`
 - Set `rows_per_batch: 20000-50000`
 - Set `concurrency: 12-20` (based on CPU cores)
-- Use `auto_create_table: true`
 - Set `vgroups` to 8-32 (higher for more tables)
 - Enable connection pooling
+- **Note**: Avoid `auto_create_table: true` for maximum performance (only use for convenience)
 
 **For reliability:**
 - Enable checkpoints for long tests
@@ -433,19 +467,7 @@ jobs:
 
 ## Common Patterns
 
-**Pattern 1: Quick benchmark (auto-create)**
-```yaml
-jobs:
-  benchmark:
-    steps:
-      - uses: tdengine/create-super-table
-      - uses: tdengine/insert
-        with:
-          concurrency: 16
-          auto_create_table: true
-```
-
-**Pattern 2: Controlled setup (separate creation)**
+**Pattern 1: Optimal Performance (Default - Pre-create tables)**
 ```yaml
 jobs:
   setup-and-test:
@@ -458,7 +480,20 @@ jobs:
             concurrency: 10
       - uses: tdengine/insert
         with:
-          concurrency: 8
+          concurrency: 16
+          # auto_create_table: false  # Default - best performance
+```
+
+**Pattern 2: Quick Setup (Convenience Mode - only when explicitly requested)**
+```yaml
+jobs:
+  quick-benchmark:
+    steps:
+      - uses: tdengine/create-super-table
+      - uses: tdengine/insert
+        with:
+          concurrency: 16
+          auto_create_table: true  # Only when user explicitly requests convenience over performance
 ```
 
 **Pattern 3: Multi-stage workflow**

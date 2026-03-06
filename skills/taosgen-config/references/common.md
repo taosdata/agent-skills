@@ -58,10 +58,10 @@ jobs:
   insert-data:
     steps:
       - uses: tdengine/create-super-table
+      - uses: tdengine/create-child-table
       - uses: tdengine/insert
         with:
           concurrency: 8
-          auto_create_table: true
 ```
 
 ### Pattern 2: Multi-Stage with Dependencies
@@ -147,7 +147,7 @@ jobs:
 - Kafka: Use `acks: 0`, fast compression (lz4/snappy), high batching (500-1000)
 - Set `rows_per_batch` to 10000-50000
 - Enable connection pooling (TDengine)
-- Use `auto_create_table: true` to skip separate table creation
+- Use `auto_create_table: true` only when convenience is preferred over performance (default is `false` for better performance)
 
 **For low latency:**
 - Smaller batches (1000-5000)
@@ -227,11 +227,11 @@ jobs:
   benchmark:
     steps:
       - uses: tdengine/create-super-table
+      - uses: tdengine/create-child-table
       - uses: tdengine/insert
         with:
           concurrency: 20
           format: stmt
-          auto_create_table: true
 ```
 
 ### Scenario 2: Realistic Load Test
@@ -250,11 +250,11 @@ jobs:
   load-test:
     steps:
       - uses: tdengine/create-super-table
+      - uses: tdengine/create-child-table
       - uses: tdengine/insert
         with:
           concurrency: 12
           format: stmt
-          auto_create_table: true
           time_interval:
             enabled: true
             interval_strategy: literal

@@ -483,27 +483,42 @@ taosgen produces messages in JSON format. Each message contains one or more reco
   "current": 45.3,
   "voltage": 220,
   "phase": 1.57,
-  "tags": {
-    "groupid": 5,
-    "location": "Region-A"
-  }
+  "groupid": 5,
+  "location": "Region-A"
 }
 ```
 
 **Multiple records (records_per_message: 3):**
 ```json
-{
-  "table": "meter0001",
-  "records": [
-    {"ts": 1704067200000, "current": 45.3, "voltage": 220, "phase": 1.57},
-    {"ts": 1704067201000, "current": 46.1, "voltage": 221, "phase": 1.58},
-    {"ts": 1704067202000, "current": 44.8, "voltage": 219, "phase": 1.56}
-  ],
-  "tags": {
+[
+  {
+    "table": "meter0001",
+    "ts": 1704067200000,
+    "current": 45.3,
+    "voltage": 220,
+    "phase": 1.57,
+    "groupid": 5,
+    "location": "Region-A"
+  },
+  {
+    "table": "meter0001",
+    "ts": 1704067201000,
+    "current": 46.1,
+    "voltage": 221,
+    "phase": 1.58,
+    "groupid": 5,
+    "location": "Region-A"
+  },
+  {
+    "table": "meter0001",
+    "ts": 1704067202000,
+    "current": 44.8,
+    "voltage": 219,
+    "phase": 1.56,
     "groupid": 5,
     "location": "Region-A"
   }
-}
+]
 ```
 
 ## Performance Tuning

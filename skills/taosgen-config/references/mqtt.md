@@ -405,27 +405,39 @@ taosgen publishes messages in JSON format. Each message contains one or more rec
   "ts": 1704067200000,
   "temperature": 25.3,
   "humidity": 65.2,
-  "tags": {
-    "location": "Building-A",
-    "floor": 3
-  }
+  "location": "Building-A",
+  "floor": 3
 }
 ```
 
 **Multiple records (records_per_message: 3):**
 ```json
-{
-  "table": "sensor0001",
-  "records": [
-    {"ts": 1704067200000, "temperature": 25.3, "humidity": 65.2},
-    {"ts": 1704067201000, "temperature": 25.4, "humidity": 65.1},
-    {"ts": 1704067202000, "temperature": 25.5, "humidity": 65.3}
-  ],
-  "tags": {
+[
+  {
+    "table": "sensor0001",
+    "ts": 1704067200000,
+    "temperature": 25.3,
+    "humidity": 65.2,
+    "location": "Building-A",
+    "floor": 3
+  },
+  {
+    "table": "sensor0001",
+    "ts": 1704067201000,
+    "temperature": 25.4,
+    "humidity": 65.1,
+    "location": "Building-A",
+    "floor": 3
+  },
+  {
+    "table": "sensor0001",
+    "ts": 1704067202000,
+    "temperature": 25.5,
+    "humidity": 65.3,
     "location": "Building-A",
     "floor": 3
   }
-}
+]
 ```
 
 ## Performance Tuning
