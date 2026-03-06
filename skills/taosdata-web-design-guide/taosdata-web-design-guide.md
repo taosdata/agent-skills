@@ -1,5 +1,5 @@
 ---
-name: taosdata-design-guide
+name: taosdata-web-design-guide
 description: TDengine 官网 ([taosdata.com](http://taosdata.com/)) 设计指南与规范。用于指导与 TDengine 中文官网相关的设计工作，包括颜色系统、排版、组件模式、间距布局等。在需要为 TDengine 创建网页相关设计时使用此 skill。
 ---
 
@@ -196,7 +196,7 @@ font-weight: 400;
 ```css
 background: transparent;
 color: #0041ce;
-border: 1px solid #2651f0;
+border: 1px solid #0041ce;
 border-radius: 30px;
 padding: 30px 30px;
 font-size: 14px;
@@ -212,15 +212,14 @@ background: #ffffff;
 border: 1px solid #e2e8f0;
 border-radius: 20px;
 padding: 30px;
-font-color: #595959;
+color: #595959;
 font-size: 14px;
 
 &:hover {
-  background:#0041ce
+  background: #0041ce;
   transition: all 0.2s ease;
-  font-color: #ffffff
+  color: #ffffff;
 }
-
 ```
 
 ### 场景卡片（scenarios-card）
@@ -336,7 +335,7 @@ gap: 16px;
     height: auto;
     z-index: 1001;
     max-width: calc(100% - 30px);
-    background-color: var(--white);
+    background-color: #ffffff;
     left: 50%;
     transform: translate(-50%, -50%);
     top: 50%;
@@ -458,7 +457,7 @@ gap: 16px;
 **两列布局:**
 
 ```css
-two-column-grid {
+.two-column-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 60px;
@@ -559,7 +558,7 @@ shadow-primary: 0 4px 14px rgba(38, 81, 240, 0.25);
 
 - **格式**: WebP 优先，PNG/JPG 备选
 - **加载**: 懒加载非首屏图片
--**尺寸**: 1920×1080，可适当缩放，但保持等比
+- **尺寸**: 1920×1080，可适当缩放，但保持等比
 - **占位**: 使用模糊占位或骨架屏
 - **边框**: 图片添加 1px 边框 `#e2e8f0`
 - **圆角**: 架构图、截图使用 8px 圆角
@@ -619,8 +618,8 @@ shadow-primary: 0 4px 14px rgba(38, 81, 240, 0.25);
 
 **字体:**
 
-- Hero: Desktop 48px → Mobile 32px
-- H1: Desktop 42px → Mobile 28px
+- Hero: Desktop 48px → Mobile 28px
+- H1: Desktop 32px → Mobile 28px
 
 ## 11. 可访问性
 
