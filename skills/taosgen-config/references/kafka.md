@@ -200,7 +200,6 @@ jobs:
           acks: 0
           records_per_message: 500
           compression: lz4
-          queue_capacity: 1000
 ```
 
 **Key points:**
@@ -528,7 +527,6 @@ taosgen produces messages in JSON format. Each message contains one or more reco
 - Increase `records_per_message` (500-1000)
 - Increase `concurrency` (16-20)
 - Use fast compression: `lz4` or `snappy`
-- Increase `queue_capacity` (1000-5000)
 - Ensure broker has sufficient partitions
 
 **For reliability:**

@@ -274,7 +274,7 @@ schema:
 
 jobs:
   create-tables:
-    needs: [setup]
+    needs: []
     steps:
       - uses: tdengine/create-super-table
       - uses: tdengine/create-child-table

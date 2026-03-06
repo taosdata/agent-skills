@@ -369,7 +369,7 @@ schema:
     tags:
       file_path: /path/to/tags.csv
       tbname_index: 0
-      exclude_indices: [1, 2]
+      exclude_indices: "1, 2"
     columns:
       file_path: /path/to/data.csv
       tbname_index: 0
@@ -407,14 +407,14 @@ tags:
   file_path: /path/to/tags.csv
   has_header: true
   tbname_index: 0
-  exclude_indices: [1, 2]
+  exclude_indices: "1, 2"
 ```
 
 **Parameters:**
 - `file_path`: Path to tags CSV file
 - `has_header`: Whether the file contains a header row. Default: `true`
 - `tbname_index`: Column index for table name (0-based). Default: `-1` (inactive)
-- `exclude_indices`: Column indices to exclude (comma-separated string or list). Default: empty (no exclusion)
+- `exclude_indices`: Column indices to exclude (comma-separated string). Default: empty (no exclusion)
 
 **Example tags.csv:**
 ```csv
