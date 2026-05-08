@@ -1,40 +1,38 @@
 # TaosData Agent Skills Marketplace
 
-Reusable **TDengine IDMP** skills for AI agents.
+本仓库提供可复用的 **TDengine IDMP** skills，供 AI Agent 配合 `idmp-cli` 使用。
 
-Use this repository together with `idmp-cli`.
+## 前置条件
 
-## Prerequisites
-
-Before installing these skills, make sure you have:
+安装这些 skills 之前，请先准备好：
 
 - Node.js **16+**
 - `npm` / `npx`
-- network access to your TDengine IDMP environment
-- either a username/password or a pre-issued API key
+- 可访问的 TDengine IDMP 环境地址
+- 用户名密码，或预先签发好的 API key
 
-## Step 1: Install `idmp-cli`
+## 第 1 步：安装 `idmp-cli`
 
 ```bash
 npm install -g @tdengine/idmp-cli
 idmp-cli --version
 ```
 
-## Step 2: Configure the IDMP server and log in
+## 第 2 步：配置 IDMP 地址并直接登录
 
-Create the default profile and persist a session in one command:
+用一条命令创建默认 profile 并持久化 session：
 
 ```bash
 printf '%s\n' "$IDMP_PASSWORD" | idmp-cli config init --profile default --server http://your-idmp:6042 --username admin@example.com --password-stdin
-# or
+# 或
 printf '%s\n' "$IDMP_API_KEY" | idmp-cli config init --profile default --server http://your-idmp:6042 --api-key-stdin
 idmp-cli config show
 idmp-cli auth check
 ```
 
-## Step 3: Add and switch another address when needed
+## 第 3 步：按需新增并切换地址
 
-If you use multiple environments, save them as separate profiles:
+如果你有多个环境，建议分别保存成 profile：
 
 ```bash
 idmp-cli config init --profile staging --server http://staging-idmp:6042 --username admin@example.com
@@ -42,9 +40,9 @@ idmp-cli profile use staging
 idmp-cli config show
 ```
 
-## Step 4: Re-authenticate later when needed
+## 第 4 步：后续按需重新登录
 
-Use `auth login` when the saved profile already exists and you only need a new session:
+如果 profile 已经保存好，只需要刷新 session，可以继续使用 `auth login`：
 
 ```bash
 printf '%s\n' "$IDMP_PASSWORD" | idmp-cli auth login --username admin@example.com --password-stdin
@@ -52,31 +50,31 @@ printf '%s\n' "$IDMP_API_KEY" | idmp-cli auth login --api-key-stdin
 idmp-cli auth check
 ```
 
-## Step 5: Install the plugin for Claude Code
+## 第 5 步：给 Claude Code 安装 plugin
 
-First add the TaosData marketplace:
+先添加 TaosData marketplace：
 
 ```bash
 claude plugin marketplace add taosdata/agent-skills
 ```
 
-Then install `idmp-plugin`:
+再安装 `idmp-plugin`：
 
 ```bash
 claude plugin install idmp-plugin@taosdata
 ```
 
-`idmp-plugin` already bundles the matching skills. If you are using Claude Code, you do not need to install the standalone skills again.
+`idmp-plugin` 已经打包了配套 skills。只要你在用 Claude Code，就不需要再额外装一遍 standalone skills。
 
-## Step 6: Install standalone skills for other agents
+## 第 6 步：给其他 Agent 安装 standalone skills
 
-If you are using another agent that supports skills, install the standalone skills from GitHub:
+如果你用的不是 Claude Code，而是其他支持 skills 机制的 Agent，再从 GitHub 安装 standalone skills：
 
 ```bash
 npx --yes skills add taosdata/agent-skills -g -y
 ```
 
-## Repository layout
+## 仓库结构
 
 ```text
 .
@@ -89,8 +87,8 @@ npx --yes skills add taosdata/agent-skills -g -y
         └── skills/
 ```
 
-This repository is the source of truth for:
+本仓库负责维护：
 
 - Claude Code marketplace metadata
 - Claude Code plugin metadata
-- `plugins/idmp-plugin/skills/` as the packaged skills bundle shipped with the plugin
+- `plugins/idmp-plugin/skills/`：随 plugin 一起分发的 packaged skills

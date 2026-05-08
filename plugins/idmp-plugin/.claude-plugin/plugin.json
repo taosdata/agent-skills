@@ -1,0 +1,5 @@
+{
+  "name": "idmp-plugin",
+  "description": "TDengine IDMP plugin with packaged skills for discovery, schema inspection, and safe operational workflows.",
+  "version": "0.1.0"
+}
