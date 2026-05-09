@@ -29,7 +29,7 @@ metadata:
 - `idmp-cli ai create create --ack-risk --data '{"elementId":123,"prompt":"demo analysis prompt","record":true}'`
 - `idmp-cli analysis analyses new-name --ack-risk --params '{"elementId":123,"name":"demo-analysis"}'`
 - `idmp-cli analysis-template analyses new-name --ack-risk --params '{"elementTemplateId":456,"name":"demo-analysis"}'`
-- `analysis.analyses.new-name` and `analysis-template.analyses.new-name` require a proposed `name` value.
+- `analysis.analyses.new-name` and `analysis-template.analyses.new-name` require a proposed `name` value and `--ack-risk`.
 - Live middle-owner proof plan.
 - Whether the workflow is leaf self, middle self, or child aggregation.
 
@@ -39,7 +39,7 @@ metadata:
 - The AI draft request body follows `ai.create.create`: keep `prompt`, `record`, `deepThinking`, and `deviceDocument` explicit, plus either `elementId` or `elementTemplateId`.
 - Minimal payloads fail in live environments.
 - Create success does not guarantee `Running`.
-- `new-name` for analyses requires a candidate `name`.
+- `new-name` for analyses requires a candidate `name` and `--ack-risk`.
 - `rootElementId` is not the current element ID.
 - A plain container plus ad-hoc attributes does not unlock self trigger types.
 - `element.elements.create` and `element.new.create` do different jobs.

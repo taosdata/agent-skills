@@ -45,7 +45,7 @@ metadata:
 ## Constrained live behaviors
 
 - Prefer `POST /api/v1/ai/analysis/create` for natural-language analysis or alert intents, then persist the returned draft through the normal create path. Use the structured DTO workflow as the fallback when the draft is unsuitable or persistence fails.
-- `analysis.analyses.new-name` and `analysis-template.analyses.new-name` require a candidate `name`; do not call them with only the owner scope.
+- `analysis.analyses.new-name` and `analysis-template.analyses.new-name` require a candidate `name` and `--ack-risk`; do not call them with only the owner scope.
 - In element mode, `rootElementId` comes from the business root rather than the current leaf element.
 - Shared environments can force analysis creation onto a data-bearing leaf when `trigger-types list` is empty on the current owner.
 - Child scope does not inherit self-scope triggers. When `applyOnSelf=false`, the backend can legitimately expose only `Session` and `Interval`, so do not assume `DataInput` or `Event` will stay available.
@@ -66,7 +66,7 @@ metadata:
 
 - Read `path`, `attributes`, `sub-templates`, `trigger-types`, and `new-name` before create or edit.
 - For natural-language creation asks, prefer the AI draft endpoint first and keep the structured create flow as the fallback.
-- `analysis.analyses.new-name` and `analysis-template.analyses.new-name` require a candidate `name`; do not call them with only the owner scope.
+- `analysis.analyses.new-name` and `analysis-template.analyses.new-name` require a candidate `name` and `--ack-risk`; do not call them with only the owner scope.
 - In element mode, the create payload needs `rootElementId` from the business root, not the current element.
 - Copyable live-safe create shapes belong in [`../idmp-workflow-analysis-create/SKILL.md`](../idmp-workflow-analysis-create/SKILL.md), especially when the payload must include `output.attributes[]`.
 - Trigger type choices depend on `applyOnSelf` and, for child scope, the selected template.

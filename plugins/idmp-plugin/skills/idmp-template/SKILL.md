@@ -46,7 +46,7 @@ metadata:
 
 - Do not mix template commands with live element commands; template mode and element mode use different owners and endpoints.
 - If `applyOnSelf=false`, reread `sub-templates` first and then refresh trigger types with the chosen child template scope.
-- `analysis-template.analyses.new-name` requires a candidate `name`; `attr-template attributes new-name` only needs the owner scope.
+- `analysis-template.analyses.new-name` requires a candidate `name` and `--ack-risk`; `attr-template attributes new-name` only needs the owner scope.
 - `attr-template attributes new-name` does not require `--ack-risk`; reserve the name first, then use the later write path for the actual risk gate.
 - If the task must create a live analysis or alert under a real element, switch back to the element-mode workflows rather than forcing template endpoints.
 

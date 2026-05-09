@@ -40,7 +40,7 @@ metadata:
 - Write-chain boundary.
 - Prefer AI draft-first create for the Event-trigger analysis when the operator starts from natural language; fall back to the structured alert chain when the AI draft is unsuitable or persistence fails.
 - `event-template events get` uses `id`.
-- `analysis.analyses.new-name` needs a candidate `name`.
+- `analysis.analyses.new-name` needs a candidate `name` and `--ack-risk`.
 - Create or resume the analysis before you write the notify rule.
 - If `analysis trigger-types list` for `applyOnSelf=false` does not include `Event`, stop instead of forcing child-scope alert creation.
 - Trigger types gate create eligibility; they do not require a real event during create proof.
