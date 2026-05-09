@@ -72,7 +72,7 @@ printf '%s\n' "$IDMP_E2E_PASSWORD" | idmp-cli auth login --username "$IDMP_E2E_U
 - Treat every write as incomplete until a follow-up `get`, `list`, runtime check, or delivery reread proves the backend kept the change.
 - Do not assume a historical `demo` root exists. Start from the currently visible first-level root that owns the shared leaf fixtures, then create any temporary middle-scope owners under that real tree.
 - If `trigger-types list` is empty on the current owner, move the create flow to a data-bearing leaf element and keep the business root as `rootElementId`.
-- Use `new-name` only with the correct payload shape. Analyses, panels, and dashboards need both the owner and a candidate `name`; attribute `new-name` only needs the owner scope. Note: `new-name` commands are read-only name reservations and do **not** require `--ack-risk`.
+- Use `new-name` only with the correct payload shape. Analyses, panels, and dashboards need both the owner and a candidate `name`; attribute `new-name` only needs the owner scope. `analysis.analyses.new-name` is a POST reserve call and still requires `--ack-risk`, while panel/dashboard/attribute `new-name` commands remain readonly.
 - Shared environments often require fixture reuse. Notify rules are typically updated in place because the documented create and update paths do not come with a matching delete flow here.
 - For alert validation, `event.events.list --params '{"analysisId":...}'` is more reliable than filtering only by `status=Unack` in a noisy shared environment.
 - Successful config writes do not prove runtime behavior. Analyses can remain `Ready`, alerts can need `fill-history`, and notification history can lag behind resend or new-event creation.

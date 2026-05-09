@@ -27,7 +27,7 @@ metadata:
 - Whether downstream notification routing is in scope after create success.
 - Notify target when routing is in scope.
 - AI alert prompt seed.
-- `idmp-cli api POST /api/v1/ai/analysis/create --ack-risk --data '{"elementId":123,"prompt":"alert when ...","record":true}'`
+- `idmp-cli ai create create --ack-risk --data '{"elementId":123,"prompt":"alert when ...","record":true}'`
 - `idmp-cli event-template events get --params '{"id":789}'`
 - `idmp-cli analysis analyses new-name --ack-risk --params '{"elementId":123,"name":"demo-alert"}'`
 - Trigger source.
@@ -40,7 +40,7 @@ metadata:
 - Write-chain boundary.
 - Prefer AI draft-first create for the Event-trigger analysis when the operator starts from natural language; fall back to the structured alert chain when the AI draft is unsuitable or persistence fails.
 - `event-template events get` uses `id`.
-- `analysis.analyses.new-name` needs a candidate `name` and `--ack-risk`.
+- `analysis.analyses.new-name` needs a candidate `name`.
 - Create or resume the analysis before you write the notify rule.
 - If `analysis trigger-types list` for `applyOnSelf=false` does not include `Event`, stop instead of forcing child-scope alert creation.
 - Trigger types gate create eligibility; they do not require a real event during create proof.

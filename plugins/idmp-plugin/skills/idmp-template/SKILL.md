@@ -39,14 +39,14 @@ metadata:
 | --- | --- |
 | Final template owner | You need the exact `elementTemplateId` before you can read attributes, sub-templates, trigger types, or create-safe names. |
 | Trigger scope | Decide `applyOnSelf` and whether a child template must be selected before you reuse trigger-type results. |
-| Candidate analysis name | `analysis-template.analyses.new-name` requires a proposed `name` and `--ack-risk`. |
+| Candidate analysis name | `analysis-template.analyses.new-name` requires a proposed `name`. |
 | Template output plan | Decide whether template attributes are reused or created fresh and which `valueType` they should carry. |
 
 ## Constrained live behaviors
 
 - Do not mix template commands with live element commands; template mode and element mode use different owners and endpoints.
 - If `applyOnSelf=false`, reread `sub-templates` first and then refresh trigger types with the chosen child template scope.
-- `analysis-template.analyses.new-name` requires a candidate `name` and `--ack-risk`; `attr-template attributes new-name` only needs the owner scope.
+- `analysis-template.analyses.new-name` requires a candidate `name`; `attr-template attributes new-name` only needs the owner scope.
 - `attr-template attributes new-name` does not require `--ack-risk`; reserve the name first, then use the later write path for the actual risk gate.
 - If the task must create a live analysis or alert under a real element, switch back to the element-mode workflows rather than forcing template endpoints.
 

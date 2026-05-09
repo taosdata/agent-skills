@@ -153,8 +153,8 @@ When the operator wants a non-leaf proof owner, first create a plain container p
 idmp-cli element elements create --ack-risk --data '{"name":"sandbox-parent","parentElementId":1,"referenceType":"ParentChild"}'
 idmp-cli template +keywords 456
 idmp-cli element new create --ack-risk --data '{"parentElementId":2,"referenceType":"ParentChild","templateId":456,"keywordValues":{"<TEMPLATE_KEY>":"<existing-source-keyword-value-1>"},"force":true}'
-idmp-cli element new create --ack-risk --data '{"parentElementId":789,"referenceType":"ParentChild","templateId":456,"keywordValues":{"<TEMPLATE_KEY>":"<existing-source-keyword-value-2>"},"force":true}'
-idmp-cli element new create --ack-risk --data '{"parentElementId":789,"referenceType":"ParentChild","templateId":456,"keywordValues":{"<TEMPLATE_KEY>":"<existing-source-keyword-value-3>"},"force":true}'
+idmp-cli element new create --ack-risk --data '{"parentElementId":2,"referenceType":"ParentChild","templateId":456,"keywordValues":{"<TEMPLATE_KEY>":"<existing-source-keyword-value-2>"},"force":true}'
+idmp-cli element new create --ack-risk --data '{"parentElementId":2,"referenceType":"ParentChild","templateId":456,"keywordValues":{"<TEMPLATE_KEY>":"<existing-source-keyword-value-3>"},"force":true}'
 ```
 
 The live-safe assumption is: the keyword-backed TDengine tables or source rows already exist, and the keyword field name must come from `template +keywords` for the chosen template.
@@ -168,7 +168,7 @@ The temporary middle-owner hierarchy is useful reusable evidence for later child
 1. Resolve the business root with `element elements path`; that value becomes `rootElementId`.
 2. If the request is natural language, try `POST /api/v1/ai/analysis/create` first and keep the returned draft for persistence or fallback analysis.
 3. Confirm the chosen owner advertises the trigger family you need.
-4. Reserve the name with `analysis analyses new-name --ack-risk` only when the AI draft path is skipped or unsuitable.
+4. Reserve the name with `analysis analyses new-name` only when the AI draft path is skipped or unsuitable.
 5. Resolve the correct output scope before you create or reuse attributes.
 6. Use the full live-safe payload shape, not a minimal payload.
 7. Reread with `get` and `list`, then `resume` if runtime state matters.

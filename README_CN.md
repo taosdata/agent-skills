@@ -64,15 +64,18 @@ claude plugin marketplace add taosdata/agent-skills
 claude plugin install idmp-plugin@taosdata
 ```
 
-`idmp-plugin` 已经打包了配套 skills。只要你在用 Claude Code，就不需要再额外装一遍 standalone skills。
+`idmp-plugin` 已经打包了配套 skills。只要你在用 Claude Code，就不需要再额外安装或拷贝这些 packaged skills。
 
-## 第 6 步：给其他 Agent 安装 standalone skills
+## 第 6 步：给其他 Agent 复用 packaged skills
 
-如果你用的不是 Claude Code，而是其他支持 skills 机制的 Agent，再从 GitHub 安装 standalone skills：
+本仓库不再单独发布顶层 standalone `skills/` 包。如果你用的是其他支持文件目录式 skills 的 Agent，可以直接复制 plugin 随包提供的 skills：
 
 ```bash
-npx --yes skills add taosdata/agent-skills -g -y
+mkdir -p /path/to/other-agent/skills
+cp -R plugins/idmp-plugin/skills/* /path/to/other-agent/skills/
 ```
+
+如果目标 Agent 没有独立的 skills 目录机制，就把对应的 `SKILL.md` 及同级 `references/` 目录手工导入到该 Agent 的可复用 prompt / instruction 系统中。
 
 ## 仓库结构
 

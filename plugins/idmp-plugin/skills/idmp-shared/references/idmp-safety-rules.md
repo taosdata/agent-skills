@@ -102,7 +102,7 @@ export IDMP_E2E_USERNAME=<user>
 export IDMP_E2E_PASSWORD=<pass>
 ```
 
-Recommended validation order: `make vet lint unit-test skills-test cli-e2e-test race-test coverage-test`.
+When these skills are maintained inside the `idmp-cli` source repository, the recommended validation order is `make vet lint unit-test skills-test cli-e2e-test race-test coverage-test`.
 
 ## Concurrency
 

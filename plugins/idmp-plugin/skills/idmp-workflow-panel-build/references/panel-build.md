@@ -6,7 +6,7 @@ Use this reference after the main workflow doc. It distills the payload shapes t
 
 For natural-language panel requests, prefer this two-step chain before the manual DTO families:
 
-1. `idmp-cli api POST /api/v1/ai/panels/create --ack-risk --data '{"elementId":123,"prompt":"...","record":true}'`
+1. `idmp-cli ai create create-post --ack-risk --data '{"elementId":123,"prompt":"...","record":true}'`
 2. Persist the returned draft through `idmp-cli panel panels create --ack-risk --params '{"elementId":123}' --data '{...}'`
 
 Hard rules:

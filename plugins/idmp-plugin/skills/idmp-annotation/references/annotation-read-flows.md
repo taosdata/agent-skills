@@ -13,7 +13,7 @@ When the generated command path is needed:
 idmp-cli schema annotation.annotation.list
 idmp-cli annotation annotation create --ack-risk --data '{...}'
 idmp-cli annotation annotation update --ack-risk --data '{...}'
-idmp-cli annotation annotation delete --ack-risk --params '{"id":123}'
+idmp-cli annotation annotation delete --ack-risk --params '{"annotationId":123}'
 ```
 
 Notes:

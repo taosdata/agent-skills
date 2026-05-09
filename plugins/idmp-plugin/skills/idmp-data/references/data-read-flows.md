@@ -17,7 +17,7 @@ Recommended order:
 3. Download an artifact when the record file name is known:
 
    ```bash
-   idmp-cli data download get --params '{"fileName":"export.zip"}'
+   idmp-cli data download get --params '{"name":"export.zip"}'
    ```
 
 4. Run a global export:

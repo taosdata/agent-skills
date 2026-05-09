@@ -26,7 +26,7 @@ metadata:
 - Candidate panel name.
 - Placement plan.
 - AI create prompt seed.
-- `idmp-cli api POST /api/v1/ai/panels/create --ack-risk --data '{"elementId":123,"prompt":"demo panel prompt","record":true}'`
+- `idmp-cli ai create create-post --ack-risk --data '{"elementId":123,"prompt":"demo panel prompt","record":true}'`
 - `idmp-cli panel panels new-name --params '{"elementId":123,"name":"demo-panel"}'`
 - Candidate dashboard name.
 - `idmp-cli dashboard dashboards new-name --params '{"elementId":123,"name":"demo-dashboard"}'`
@@ -53,7 +53,7 @@ metadata:
 ## Execution flow
 
 1. Lock the owner and current shells with `idmp-cli element elements get --params`, `idmp-cli panel panels list --params`, and `idmp-cli dashboard dashboards list --params`.
-2. For natural-language requests, try AI draft-first create with `idmp-cli api POST /api/v1/ai/panels/create --ack-risk --data`, then persist the returned draft through `idmp-cli panel panels create --ack-risk --params` after removing `id`.
+2. For natural-language requests, try AI draft-first create with `idmp-cli ai create create-post --ack-risk --data`, then persist the returned draft through `idmp-cli panel panels create --ack-risk --params` after removing `id`.
 3. If the AI draft is unsuitable, persistence fails, or reread/query proves the draft collapsed scope, fall back to the current structured panel path.
 4. Reserve names with `idmp-cli panel panels new-name --params` and `idmp-cli dashboard dashboards new-name --params` when the AI path is skipped or unsuitable.
 5. Create or inspect the dashboard shell through `idmp-cli dashboard dashboards create --ack-risk --params` when placement is required.

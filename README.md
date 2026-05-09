@@ -66,15 +66,18 @@ Then install `idmp-plugin`:
 claude plugin install idmp-plugin@taosdata
 ```
 
-`idmp-plugin` already bundles the matching skills. If you are using Claude Code, you do not need to install the standalone skills again.
+`idmp-plugin` already bundles the matching skills. If you are using Claude Code, you do not need to install or copy the packaged skills again.
 
-## Step 6: Install standalone skills for other agents
+## Step 6: Reuse the packaged skills for other agents
 
-If you are using another agent that supports skills, install the standalone skills from GitHub:
+This repository does not publish a separate top-level standalone `skills/` bundle. If another agent supports filesystem-based skills, copy the packaged plugin skills directly:
 
 ```bash
-npx --yes skills add taosdata/agent-skills -g -y
+mkdir -p /path/to/other-agent/skills
+cp -R plugins/idmp-plugin/skills/* /path/to/other-agent/skills/
 ```
+
+If the target agent does not support a dedicated skills directory, import the relevant `SKILL.md` files and their sibling `references/` directories into that agent's reusable prompt or instruction system manually.
 
 ## Repository layout
 

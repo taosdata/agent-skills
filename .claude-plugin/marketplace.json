@@ -3,7 +3,7 @@
   "owner": {
     "name": "TaosData"
   },
-  "description": "TaosData marketplace for the IDMP Claude Code plugin and standalone skills.",
+  "description": "TaosData marketplace for the IDMP Claude Code plugin and its packaged skills.",
   "plugins": [
     {
       "name": "idmp-plugin",
