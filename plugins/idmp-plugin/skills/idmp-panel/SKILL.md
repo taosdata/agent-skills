@@ -87,6 +87,9 @@ idmp-cli schema panel.verify.create-post
 idmp-cli panel panels new-name --params '{"elementId":123,"name":"demo-panel"}'
 idmp-cli panel panels create --dry-run --ack-risk --params '{"elementId":123}' --data '{...}'
 
+# In the current generated schema, `panel.panels.query` is readonly and `--ack-risk` is optional,
+# but `panel.panels.sqls`, `panel.verify.create`, and `panel.verify.create-post` are still generated
+# as write-risk commands and must keep `--ack-risk`.
 idmp-cli panel panels query --ack-risk --params '{"elementId":123}' --data '{...}'
 idmp-cli panel panels sqls --ack-risk --params '{"elementId":123}' --data '{...}'
 idmp-cli panel verify create-post --ack-risk --params '{"elementId":123}' --data '{...}'

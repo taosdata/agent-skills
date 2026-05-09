@@ -71,13 +71,14 @@ When doing the same action on N objects, you must:
 
 The CLI no longer infers risk from string matching. It reads the generator-injected OpenAPI `x-risk` extension instead:
 
-- `readonly`: `GET`, `HEAD`, `OPTIONS`, plus `POST` and `PUT` endpoints whose trailing segment is one of `search`, `query`, `list`, `export`, `preview`, `exists`, `tree`, `path`, `children`, `parents`, `history`, `versions`, `changes`, `full-path`, `path-items`, `single-path`, `samples`, `forecast`, `validate`, or `preview-result`. **These endpoints do not require `--ack-risk`**, even when they use `POST`.
+- `readonly`: `GET`, `HEAD`, `OPTIONS`, plus generated `POST` and `PUT` endpoints whose OpenAPI `x-risk` is `readonly`. Query-like suffixes such as `search`, `query`, `list`, `export`, `preview`, `exists`, `tree`, `path`, `children`, `parents`, `history`, `versions`, `changes`, `full-path`, `path-items`, `single-path`, `samples`, `forecast`, and `preview-result` often land here. **Use `idmp-cli schema <path>` as the final source of truth for `--ack-risk`.**
 - `write`: normal `POST`, `PUT`, and `PATCH`. Interactive environments prompt; CI and automation require `--ack-risk`.
 - `dangerous`: `DELETE`, backup or restore, batch delete, sync-meta, and similar endpoints matched by path prefix, such as `/api/v1/backup`, `/api/v1/system/backup`, `/api/v1/sync-meta`, `/api/v1/system/import`, `/api/v1/users/delete`, `/api/v1/batch/delete`, and `/api/v1/notifications/templates/import`.
 
 Common gotchas:
 
-- `POST /*/search`, `/*/query`, and `/*/forecast` used to be misclassified as writes. They are now `readonly`, so old scripts can remove `--ack-risk` there.
+- `POST /*/search`, `/*/query`, and `/*/forecast` used to be misclassified as writes. When the current schema reports them as `readonly` (for example `panel.panels.query`), old scripts can remove `--ack-risk` there.
+- Do not assume every `*/validate` endpoint is readonly by name alone. The generated schema currently marks `panel.verify.create` and `panel.verify.create-post` as `write`, so they still require `--ack-risk`.
 - Local destructive commands such as `idmp-cli config remove` and `idmp-cli profile remove` now use the unified wording `Confirm local remove on profile <name> (risk=dangerous)`, and CI must still pass `--ack-risk`.
 - `PATCH` is no longer automatically `dangerous` unless the path is in the dangerous list.
 

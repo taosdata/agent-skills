@@ -79,9 +79,14 @@ idmp-cli schema data.download.get
 idmp-cli data download get --params '{"name":"export.zip"}'
 
 idmp-cli schema data.import-and-export.import
+# `data.import-and-export.import` is multipart/form-data in the current schema.
+# Inspect the schema output first and build the request with the exact transport and fields
+# (for example `jsonFile` / `taosgenFiles[]`) instead of assuming a plain JSON body.
 idmp-cli data import-and-export import --ack-risk --data '{...}'
 
 idmp-cli schema data.single-import.create
+# `data.single-import.create` is also multipart/form-data in the current schema.
+# Inspect the schema output first and use the exact upload fields instead of guessing a JSON DTO.
 idmp-cli data single-import create --ack-risk --data '{...}'
 ```
 
