@@ -1,75 +1,99 @@
-# Agentic Skills for TDengine
+# TaosData Agent Skills Marketplace
 
-本仓库用于沉淀/分享可复用的 **Agentic Skills**（面向 Claude Code / Codex / OpenCode 等 AI Agent 的“可执行工作说明书”）。
+Reusable **TDengine IDMP** skills for AI agents.
 
-- 技能源码位于：`skills/`
-- 完整教程：`docs/AGENT_SKILLS_TUTORIAL.md`
-- 贡献指南：`CONTRIBUTING.md`
+Use this repository together with `idmp-cli`.
 
-## 仓库结构
+## Prerequisites
 
+Before installing these skills, make sure you have:
+
+- Node.js **16+**
+- `npm` / `npx`
+- network access to your TDengine IDMP environment
+- either a username/password or a pre-issued API key
+
+## Step 1: Install `idmp-cli`
+
+```bash
+npm install -g @tdengine/idmp-cli
+idmp-cli --version
 ```
+
+## Step 2: Configure the IDMP server and log in
+
+Create the default profile and persist a session in one command:
+
+```bash
+printf '%s\n' "$IDMP_PASSWORD" | idmp-cli config init --profile default --server http://your-idmp:6042 --username admin@example.com --password-stdin
+# or
+printf '%s\n' "$IDMP_API_KEY" | idmp-cli config init --profile default --server http://your-idmp:6042 --api-key-stdin
+idmp-cli config show
+idmp-cli auth check
+```
+
+## Step 3: Add and switch another address when needed
+
+If you use multiple environments, save them as separate profiles:
+
+```bash
+idmp-cli config init --profile staging --server http://staging-idmp:6042 --username admin@example.com
+idmp-cli profile use staging
+idmp-cli config show
+```
+
+## Step 4: Re-authenticate later when needed
+
+Use `auth login` when the saved profile already exists and you only need a new session:
+
+```bash
+printf '%s\n' "$IDMP_PASSWORD" | idmp-cli auth login --username admin@example.com --password-stdin
+printf '%s\n' "$IDMP_API_KEY" | idmp-cli auth login --api-key-stdin
+idmp-cli auth check
+```
+
+## Step 5: Install the plugin for Claude Code
+
+First add the TaosData marketplace:
+
+```bash
+claude plugin marketplace add taosdata/agent-skills
+```
+
+Then install `idmp-plugin`:
+
+```bash
+claude plugin install idmp-plugin@taosdata
+```
+
+`idmp-plugin` already bundles the matching skills. If you are using Claude Code, you do not need to install or copy the packaged skills again.
+
+## Step 6: Reuse the packaged skills for other agents
+
+This repository does not publish a separate top-level standalone `skills/` bundle. If another agent supports filesystem-based skills, copy the packaged plugin skills directly:
+
+```bash
+mkdir -p /path/to/other-agent/skills
+cp -R plugins/idmp-plugin/skills/* /path/to/other-agent/skills/
+```
+
+If the target agent does not support a dedicated skills directory, import the relevant `SKILL.md` files and their sibling `references/` directories into that agent's reusable prompt or instruction system manually.
+
+## Repository layout
+
+```text
 .
-├── skills/
-│   ├── gen-doc/
-│   │   ├── SKILL.md
-│   │   └── references/
-│   │       ├── RS.md
-│   │       ├── FS.md
-│   │       ├── DS.md
-│   │       ├── TS.md
-│   │       └── TM.md
-│   ├── gen-doc-rs/
-│   │   └── SKILL.md
-│   ├── gen-doc-fs/
-│   │   └── SKILL.md
-│   ├── gen-doc-ds/
-│   │   └── SKILL.md
-│   ├── gen-doc-ts/
-│   │   └── SKILL.md
-│   └── gen-doc-tm/
-│       └── SKILL.md
-├── docs/
-│   └── AGENT_SKILLS_TUTORIAL.md
-├── examples/
-│   ├── Skills.toml
-│   └── warp-demo-gen-doc-input.md
-└── CONTRIBUTING.md
+├── .claude-plugin/
+│   └── marketplace.json
+└── plugins/
+    └── idmp-plugin/
+        ├── .claude-plugin/
+        │   └── plugin.json
+        └── skills/
 ```
 
-## Quick Start（推荐使用 cowork 管理/安装）
+This repository is the source of truth for:
 
-> `cowork` 是 Skills 管理 CLI（安装/更新/安全审计/冲突检查/Skills.toml 依赖管理等）。
-
-### 1) 安装 cowork
-
-```bash
-cargo install cowork
-cowork --version
-```
-
-### 2) 在你的目标项目中安装本仓库 skills（项目本地安装）
-
-在 **你的项目根目录**（不是本仓库根目录）执行：
-
-```bash
-cowork install taosdata/agent-skills --local
-```
-
-> `--local` 会把 skills 安装到项目的技能目录（例如 `.claude/skills/`），便于 Warp/Agent 发现与使用。
-
-### 3) 在 Warp 中使用
-
-- 方式 A：Slash Command
-  - `/gen-doc`
-- 方式 B：自然语言
-  - “帮我生成一份 RS/FS/DS/TS/TM，slug=xxx，内容如下 ……”
-
-## 文档
-
-- 完整教程：`docs/AGENT_SKILLS_TUTORIAL.md`
-- 贡献指南：`CONTRIBUTING.md`
-
-## License
-
-TBD（如用于公司内部，可先不发布；如需开源建议补充许可证并明确贡献协议）。
+- Claude Code marketplace metadata
+- Claude Code plugin metadata
+- `plugins/idmp-plugin/skills/` as the packaged skills bundle shipped with the plugin
