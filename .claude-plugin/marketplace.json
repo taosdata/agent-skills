@@ -1,15 +1,16 @@
 {
   "name": "taosdata",
   "owner": {
-    "name": "TaosData"
+    "name": "TaosData",
+    "email": "it@taosdata.com"
   },
-  "description": "TaosData marketplace for the IDMP Claude Code plugin and its packaged skills.",
+  "description": "Official TaosData plugins for Claude Code",
   "plugins": [
     {
       "name": "idmp-plugin",
       "source": "./plugins/idmp-plugin",
       "description": "TDengine IDMP plugin with packaged skills for discovery, schema inspection, and safe operational workflows.",
-      "version": "0.1.0"
+      "keywords": ["TDengine", "IDMP", "database", "monitoring", "alert", "dashboard", "industrial-data", "industrial-manufacturing", "data-management", "iot", "time-series", "asset-modeling", "data-ingestion"]
     }
   ]
 }
