@@ -1,0 +1,19 @@
+{
+  "__doc__": {
+    "description": "这是在指定的 UOM Class 下创建具体 UOM (单位) 的请求体模板。调用 POST /api/v1/uomclasses/{uomClassId}/uom 接口时使用。",
+    "fields": {
+      "name": "单位的名称，例如：华氏度、厘米、千帕",
+      "description": "（可选）该单位的详细描述",
+      "abbreviation": "该单位的缩写，例如：°F、cm、kPa",
+      "refUomId": "参考单位 (通常是 canonicalUom) 的 ID。用于定义本单位与参考单位的转换关系",
+      "refFactor": "转换系数 (乘数)。本单位 = (参考单位 * refFactor) + refOffset",
+      "refOffset": "转换偏移量 (加数)。例如：华氏度转换公式中使用的偏移量"
+    }
+  },
+  "name": "华氏度",
+  "description": "华氏温度",
+  "abbreviation": "°F",
+  "refUomId": 1,
+  "refFactor": 1.8,
+  "refOffset": 32.0
+}
