@@ -1,0 +1,178 @@
+{
+  "info": {
+    "id": "scenario_id",
+    "name": "场景名称",
+    "description": "场景描述",
+    "file": "sample_data.json",
+    "image": "optional_image.jpg"
+  },
+  "TDasset": {
+    "url": "http://<idmp-host>:<port>/api/v1",
+    "user": "admin",
+    "password": "password"
+  },
+  "datasource": {
+    "db": {
+      "host": "<tsdb-host>",
+      "port": 6041,
+      "user": "root",
+      "password": "taosdata"
+    },
+    "max_active": 20,
+    "min_idle": 3,
+    "max_lifetime": 1800000,
+    "idle_timeout": 600000,
+    "connection_timeout": 30000
+  },
+  "databases": [
+    {
+      "name": "idmp_sample_db",
+      "drop": "yes",
+      "vgroups": 1,
+      "precision": "ms",
+      "replica": 1,
+      "duration": "10d",
+      "keep": 3650
+    }
+  ],
+  "templates": [
+    {
+      "name": "路径模板(非叶子节点)",
+      "leaf": false,
+      "level": 3,
+      "description": "用于构建资产树的中间层级",
+      "namingPattern": "${KEYWORD1}",
+      "keywordsDesc": {
+        "KEYWORD1": "层级名称"
+      }
+    },
+    {
+      "name": "设备模板(叶子节点)",
+      "leaf": true,
+      "namingPattern": "${KEYWORD1}",
+      "keywordsDesc": {
+        "KEYWORD1": "子表(设备)名称"
+      },
+      "location": {
+        "altitude": {
+          "min": -100,
+          "max": 8000
+        },
+        "latitude": {
+          "min": -90,
+          "max": 90
+        },
+        "longitude": {
+          "min": -180,
+          "max": 180
+        }
+      },
+      "super_tables": [
+        {
+          "db": "idmp_sample_db",
+          "name": "stb_name",
+          "start_timestamp": null,
+          "time_step": 60000,
+          "non_stop_mode": false,
+          "beyond_current_time": false,
+          "insert_rows": 10080,
+          "batch_insert_num": 1000,
+          "insert_interval": 0,
+          "metrics": [
+            {
+              "name": "metric_1",
+              "title": "动态指标",
+              "description": "指标说明描述",
+              "type": "Float",
+              "tdType": "metric",
+              "uomClass": "流量",
+              "uom": "l/s",
+              "displayDigits": 2,
+              "fun": "4*sin(x)+random(2)+4"
+            }
+          ],
+          "tags": [
+            {
+              "name": "location",
+              "title": "地址",
+              "description": "地理位置说明",
+              "type": "Varchar",
+              "length": 50,
+              "tdType": "tag"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "tree_root": {
+    "tag_name": "location",
+    "value": "根节点名称(中文)",
+    "visible": "true"
+  },
+  "trees": [
+    {
+      "template": "路径模板名称",
+      "values": "中间层节点(中文)",
+      "children": [
+        {
+          "template": "设备模板(叶子节点)",
+          "child_table_names": [
+            "dev-1",
+            "dev-2",
+            "dev-3",
+            "dev-4",
+            "dev-5"
+          ],
+          "values": [
+            "设备-1",
+            "设备-2",
+            "设备-3",
+            "设备-4",
+            "设备-5"
+          ],
+          "device_id": [
+            "SN001",
+            "SN002",
+            "SN003",
+            "SN004",
+            "SN005"
+          ]
+        }
+      ]
+    }
+  ],
+  "__doc__": {
+    "info": "场景元数据。id须唯一，file须与文件名一致。",
+    "TDasset": "IDMP连接信息，命令行模式生效。",
+    "datasource": "TDengine连接池配置。db包含host/port/user/pass。",
+    "databases": "TDengine建库参数。precision可选ms/us/ns；keep为存储天数。",
+    "templates": {
+      "leaf": "true为超级表/设备，false为中间路径层级。",
+      "namingPattern": "【强制规范】命名规则，固定值为 ${KEYWORD1}，严禁修改。",
+      "super_tables": {
+        "TSDB_model_rule": "【强制规范】遵循TDengine TSDB数据建模逻辑：同类设备一张超级表。不同采集指标的设备必须建立独立的超级表，切勿将拥有不同采集指标（Metrics）的设备强行合并为同一超级表。即使部分Metrics相似，但只要存在差异，就必须拆分超级表（即拆分设备模板），并分别定义对应的采集指标。",
+        "time_step": "数据时间步进(ms)。",
+        "non_stop_mode": "【强制】是否持续生成模拟数据，默认为 false。",
+        "beyond_current_time": "【强制】是否允许生成超过当前时间的数据，可选 true 或 false。",
+        "insert_rows": "【强制规则】必须默认生成过去 7 天的历史数据。请根据您设定的 time_step 自动计算此值，公式为：7 * 24 * 60 * 60 * 1000 / time_step（例如：time_step为60000时，此处应填 10080）。",
+        "batch_insert_num": "【强制】批量写入的行数，默认值为 1000。根据写入量调节数量，最大100000",
+        "insert_interval": "【强制】写入间隔时间(ms)，默认值为 0。",
+        "fun": "【强制规范】模拟函数中仅允许使用sin(x), cos(x), random(n)三种函数，禁止使用其他任何函数（包括但不限于floor、ceil、abs、sqrt、pow、exp、log等）。其中x为时间变量，n为随机数范围。示例：4*sin(x)+random(2)+4",
+        "tdType": "metric(指标) 或 tag(标签)。",
+        "metrics_adv": "必须包含 description。支持 traits (如 Limits) 和 defaultValue。",
+        "tags_adv": "必须包含 description。column支持引用如 $(databases[0]).$(super_tables[1]).location。"
+      },
+      "tags_hierarchy": "【强制规范】Tag值严禁包含“.”。需要体现多层级信息时，必须拆分为多个Tag存储。例如：不要使用 location: '中国.北京'，而应拆分为 country: '中国' 和 city: '北京'。"
+    },
+    "tree_root": {
+      "tag_name": "【强制】设定为超级表中的第一个tag的名称。"
+    },
+    "trees": {
+      "child_table_names": "【强制规范】定义子表名称，必须使用纯英文及数字。禁止使用范围生成，如 dev-[1,5]，必须使用 dev_1, dev_2, dev_3, dev_4, dev_5 的方式明确指定。",
+      "values": "【规范】定义在IDMP界面上显示的资产节点名称，应尽量使用中文。并确保和child_table_names中设定的数组长度相等。必须确保在全局范围内唯一，严禁在不同父节点下使用相同名称。",
+      "tag_assignment": "【强制规范】必须在树节点中直接给Tag赋值。并确保和child_table_names中设定的数组长度相等。即使某属性对于所有设备都是相同值，也必须写成相同长度的数组，例如：vendor: ['东方泵业', '东方泵业']。此赋值逻辑与 namingPattern 无关，严禁参考 namingPattern。",
+      "children_adv": "必须包含template对应的超级表中的所有tag。例如template对应的超级表中定义了3个tag，那么除第一个tag外，另外两个tag要在children中进行显式赋值。"
+    }
+  }
+}

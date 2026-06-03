@@ -1,0 +1,15 @@
+{
+  "__doc__": {
+    "description": "这是创建 UOM Class (单位类别) 的请求体模板。调用 POST /api/v1/uomclasses 接口时使用。",
+    "fields": {
+      "name": "单位类别的名称，例如：温度、长度、压力等",
+      "description": "（可选）单位类别的详细描述",
+      "canonicalUom": "该类别下的标准基础单位名称，例如：摄氏度、米、帕斯卡",
+      "canonicalAbbr": "该类别下标准基础单位的缩写，例如：°C、m、Pa"
+    }
+  },
+  "name": "温度",
+  "description": "温度测量类别",
+  "canonicalUom": "摄氏度",
+  "canonicalAbbr": "°C"
+}
