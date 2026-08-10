@@ -20,7 +20,8 @@ metadata:
 | **`--root-name`** | 二选一 | 按名称过滤，仅导出指定根节点及其子树 |
 | **`--sample-data`** | 二选一 | 指定 `sample_data.json`，自动从中提取 `info.name` 作为根节点过滤条件 |
 | **`--update`** | 可选 | 更新模式：从已有输出文件中提取根节点名称并重新拉取最新结构 |
-| IDMP 登录信息 | 降级备用 | 若无 `state.json`，从 `login_info.txt` 或用户输入获取 host、user、password |
+| **`--api-key`** | 可选 | 直接使用 API Key 进行鉴权，优先级高于用户名/密码；今优先从 `state.json` 的 `idmp-login.api_key` 读取 |
+| IDMP 登录信息 | 降级备用 | 若无 `state.json` 且无 API Key，从 `login_info.txt` 或用户输入获取 host、user、password |
 
 ---
 
@@ -36,8 +37,10 @@ metadata:
 - 本技能的脚本相对位置固定为本 `SKILL.md` 同级的 `scripts/export_idmp_tree.py`。
 - 执行前必须先定位本 `SKILL.md` 的绝对路径，并以此推导 `SKILL_DIR`，严禁硬编码绝对路径。
 
-**`state.json` 优先于直接登录参数**
-- 只要存在 `state.json`，必须通过 `--state` 参数传入，而不是手动传递 `--host`/`--user`/`--password`。
+**`state.json` 与 API Key 优先于直接登录参数**
+- 只要存在 `state.json`，必须通过 `--state` 参数传入。
+- 脚本会自动从 `state.json` 的 `idmp-login.api_key` 字段读取 API Key，有则跳过登录流程。
+- 无 API Key 时，降级使用 host/user/password 登录。
 
 **输出文件不得覆盖已有有效结果**
 - 若输出路径已存在文件，默认应追加时间戳以示区分，或在 `--update` 模式下原地更新。
@@ -75,9 +78,10 @@ ls "$SKILL_DIR/scripts/export_idmp_tree.py"
 
 | 优先级 | 来源 | 说明 |
 |:--- |:--- |:--- |
-| 1（最高） | `state.json` 中的 `idmp-login` 字段 | 由 `idmp-easyuse` 初始化时生成 |
-| 2 | 用户指定的登录信息 | 包含 host、user、password |
-| 3（最低） | 直接向用户询问 | 仅在上述两种来源均不可用时执行 |
+| 1（最高） | `state.json` 中的 `idmp-login.api_key` 字段 | API Key 鉴权，无需登录流程 |
+| 2 | `state.json` 中的 `idmp-login` 字段（user/pass） | 由 `idmp-easyuse` 初始化时生成 |
+| 3 | 用户指定的登录信息 | 包含 host、user、password |
+| 4（最低） | 直接向用户询问 | 仅在上述三种来源均不可用时执行 |
 
 **1.3 确定输出路径**
 

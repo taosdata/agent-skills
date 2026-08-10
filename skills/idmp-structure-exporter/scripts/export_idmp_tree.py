@@ -9,26 +9,31 @@ import os
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
-def export_idmp_tree(host, username, password, output_file, root_name=None):
-    # 1. 登录获取 Token
-    login_url = f"{host.rstrip('/')}/api/v1/users/login"
-    login_payload = {"login_name": username, "password": password}
-    
-    try:
-        print(f"Logging in to {login_url}...")
-        response = requests.post(login_url, json=login_payload, verify=False, timeout=10)
-        response.raise_for_status()
-        login_data = response.json()
-        token = login_data.get("token")
-        if not token:
-            print("Login failed: Token not found in response.")
+def export_idmp_tree(host, output_file, root_name=None, username=None, password=None, api_key=None):
+    """导出 IDMP 资产树。API Key 优先，如果没有 API Key 则降级使用用户名/密码登录。"""
+    # 1. 鉴权：API Key 优先，降级时登录获取 Token
+    if api_key:
+        token = api_key
+        print(f"Using API Key for authentication (host: {host})...")
+    else:
+        login_url = f"{host.rstrip('/')}/api/v1/users/login"
+        login_payload = {"login_name": username, "password": password}
+        
+        try:
+            print(f"Logging in to {login_url}...")
+            response = requests.post(login_url, json=login_payload, verify=False, timeout=10)
+            response.raise_for_status()
+            login_data = response.json()
+            token = login_data.get("token")
+            if not token:
+                print("Login failed: Token not found in response.")
+                sys.exit(1)
+            print("Login success, token obtained.")
+        except Exception as e:
+            print(f"Login error: {e}")
+            if hasattr(e, 'response') and e.response is not None:
+                print(f"Server response: {e.response.text}")
             sys.exit(1)
-        print("Login success, token obtained.")
-    except Exception as e:
-        print(f"Login error: {e}")
-        if hasattr(e, 'response') and e.response is not None:
-            print(f"Server response: {e.response.text}")
-        sys.exit(1)
 
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -134,8 +139,9 @@ def export_idmp_tree(host, username, password, output_file, root_name=None):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Export IDMP element tree to JSON using API")
     parser.add_argument("--host", help="IDMP host URL")
-    parser.add_argument("--user", help="IDMP username")
-    parser.add_argument("--password", help="IDMP password")
+    parser.add_argument("--user", help="IDMP 用户名（无 API Key 时使用）")
+    parser.add_argument("--password", help="IDMP 密码（无 API Key 时使用）")
+    parser.add_argument("--api-key", dest="api_key", help="IDMP API Key（优先于用户名/密码）")
     parser.add_argument("--state", help="state.json 文件路径，从中读取登录信息")
     parser.add_argument("--output", default="idmp_tree.json", help="Output file path")
     parser.add_argument("--root-name", help="Only export subtree starting with this name")
@@ -145,6 +151,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     host, user, password = args.host, args.user, args.password
+    api_key = args.api_key
 
     # 如果提供了 state.json，则从中读取登录信息
     if args.state:
@@ -155,6 +162,8 @@ if __name__ == "__main__":
             state_data = json.load(f)
             login_info = state_data.get('idmp-login') or state_data.get('login')
             if login_info:
+                # 优先读取 API Key
+                api_key = api_key or login_info.get('api_key')
                 host = host or login_info.get('url') or login_info.get('idmp_url')
                 user = user or login_info.get('user') or login_info.get('idmp_user')
                 password = password or login_info.get('pass') or login_info.get('idmp_pass')
@@ -167,9 +176,12 @@ if __name__ == "__main__":
             else:
                 print(f"警告: state 文件中未发现 'idmp-login' 或 'login' 信息")
 
-    # 校验必要参数
-    if not host or not user or not password:
-        parser.error("必须提供 --host/--user/--password 或在 --state 中包含有效登录信息")
+    # 校验地址参数
+    if not host:
+        parser.error("必须提供 --host 或 --state（含有效 url/host 信息）")
+    # 校验鉴权参数：API Key 和用户名/密码二选一
+    if not api_key and (not user or not password):
+        parser.error("必须提供 --api-key，或同时提供 --user 和 --password（或在 --state 中包含它们）")
 
     root_name = args.root_name
 
@@ -208,4 +220,4 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"Error reading sample data file: {e}")
 
-    export_idmp_tree(host, user, password, args.output, root_name)
+    export_idmp_tree(host, args.output, root_name, username=user, password=password, api_key=api_key)
