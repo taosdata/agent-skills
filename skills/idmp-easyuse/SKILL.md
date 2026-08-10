@@ -45,6 +45,15 @@ metadata:
 **面板和分析数量下限（类别 1）**
 - 面板总数和分析任务总数各不少于 5 个，且必须分布在不同设备或层级节点上，不得集中在单一节点。
 
+**MCP 工具优先级（⚠️ 必须遵守）**
+- **第四步（关键指标）、第五步（告警规则）、第六步（过程事件）**：
+  - ✅ **优先使用 `add_analysis`**（自然语言描述方式）。该工具能自动推断触发类型、聚合函数和输出属性格式，避免 `create_analysis` 中 `output`、`trigger` 字段结构复杂、难以正确填写的问题。
+  - ⚠️ 仅当 `add_analysis` 生成结果不符合调研文档要求时，才降级使用 `create_analysis` / `create_alarm_rule` 精确控制参数。
+- **第七步（可视化面板）**：
+  - ✅ **优先使用 `add_panel`**（自然语言描述方式）。该工具能自动解析属性名并填充完整的 PanelAttribute 对象（含 `attributeExpression`、`expression`、`formula`、`window` 等字段）。
+  - ❌ **禁止直接使用 `create_panel` 的 `ya_attributes`/`xa_attributes` 参数**：其 schema 仅标注为 `array of object`，未声明必要子字段，模型无法正确推断——直接传入会导致属性列为 `null`，面板报错 `The column name of the data referred attribute null in the panel is empty`。
+  - ⚠️ 仅在 `add_panel` 无法匹配属性（如 L1 根节点无直接属性）时，才使用 `create_panel`，并从已有正常面板的 `yaAttributes` 结构中复制完整字段后修改。
+
 **状态驱动与内容压缩 (State-Driven & Compression)**
 - 全流程必须维护并更新项目根目录下的 `outputs/state.json`。
 - **状态内容**：必须包含场景名、项目路径、登录凭据、调研元数据（指标/告警列表）、资产树结构（含 Node ID）、已完成步骤。
@@ -100,14 +109,14 @@ metadata:
        "root": "/absolute/path/to/demo/smart_factory_20260331",
        "category": 1,
        "tsdb-login": { "url": "http://localhost:6041", "user": "root", "pass": "taosdata" },
-       "idmp-login": { "url": "http://localhost:6042", "user": "admin", "pass": "password" },
+       "idmp-login": { "url": "http://localhost:6042", "user": "admin", "pass": "password", "api_key": "api_xxx.yyy" },
        "steps": ["init"]
      }
      ```
 5. **MCP 服务器检查与创建**：
    - 从 `state.json` 中的 `idmp-login.url` 提取 `IDMP_HOST`，检查是否存在 URL 为 `http://<IDMP_HOST>:6042/api/v1/mcp/stream` 的 MCP 服务器。
    - 若不存在，必须尝试根据 `references/idmp_mcp_config.md` 中的配置信息创建该 MCP 服务器。
-   - 调用 `scripts/get_login_token.py` 获取 `IDMP_TOKEN`，替换到 MCP 配置中。
+   - 调用 `scripts/prepare_mcp_config_content.py --state outputs/state.json` 完成 API Key 的创建与获取，将输出的 API Key 写入 `state.json` 的 `idmp-login.api_key` 字段，并替换到 MCP 配置中。若 `state.json` 中已存在 `idmp-login.api_key`，则直接使用，跳过创建步骤。
    - 若创建失败，必须立即询问用户是否继续任务；若用户选择继续，则在明确告知 MCP 服务不可用的前提下进入后续步骤，否则停止当前流程。
 
 ---
@@ -146,7 +155,7 @@ metadata:
 
 ### 第四步：关键指标配置
 
-**注意：本步骤使用 MCP (Model Context Protocol) 实现。**
+**注意：本步骤必须使用 MCP (Model Context Protocol) 实现。**
 
 传递以下内容（供 MCP 工具使用）：
 
@@ -156,11 +165,19 @@ metadata:
 | `outputs/industry_research.md` 路径 | ✅ 必传 | — |
 | MCP 调用命令 | ✅ 必传 根据 `outputs/industry_research.md` 中的各层级关键指标，在<完整拓扑的根节点>的资产目录下生成各层级指标。指标从叶子节点开始，逐层生成，直到根节点（L1）。 | ✅ 必传 根据用户提供的指标，生成各层级指标。|
 
+**工具选择（必须遵守）**：
+- ✅ **优先调用 `add_analysis`**，传入 `element_id`（目标节点）、`root_element_id`（L1 根节点）和中文自然语言 `description`。
+- 描述需包含：指标名称、触发频率、聚合函数、属性名称（与调研文档一致的中文名）。
+- 示例：`"每1分钟对1号气象站的风速做滑动最大值计算，输出属性名为'气象站1分钟最高风速'"`
+- ⚠️ `add_analysis` 失败或结果不符时，才降级使用 `create_analysis` 精确构造 `trigger`/`output` 参数。
+
+**> 执行完毕后，检查关键指标是否按照要求创建成功，如果不成功，列出未成功的指标和失败原因。然后必须调用 `update_state.py` 将 `"indicators"` 追加到 `state.json` 中。**
+
 ---
 
-### 第五步：告警规则配置
+### 第五步：告警规则配置  (MCP 模式实现)
 
-**注意：本步骤使用 MCP (Model Context Protocol) 实现。**
+**注意：本步骤必须使用 MCP (Model Context Protocol) 实现。**
 
 传递以下内容（供 MCP 工具使用）：
 
@@ -170,11 +187,19 @@ metadata:
 | `outputs/industry_research.md` 路径 | ✅ 必传 | — |
 | MCP 调用命令 | ✅ 必传 根据 `outputs/industry_research.md` 中的各层级告警规则，在<完整拓扑的根节点>的资产目录下生成各层级告警规则。告警规则从叶子节点开始，逐层生成，直到根节点（L1）。 | ✅ 必传 根据用户提供的告警规则，生成各层级告警规则。|
 
+**工具选择（必须遵守）**：
+- ✅ **优先调用 `add_analysis`**，传入 `element_id`、`root_element_id` 和中文自然语言 `description`。
+- 描述需包含：告警名称、触发条件（含属性名和阈值）、持续时长、恢复条件、告警级别（Critical/Major/Warning/Minor）。
+- 示例：`"当变桨电池电压低于360V持续1分钟时触发Major告警，命名为'变桨电池欠压告警'，恢复条件为电压大于等于360V"`
+- ⚠️ `add_analysis` 失败或结果不符时，才降级使用 `create_alarm_rule` 精确构造参数。
+
+**> 执行完毕后，检查告警规则是否按照要求创建成功，如果不成功，列出未成功的告警规则和失败原因。然后必须调用 `update_state.py` 将 `"alarms"` 追加到 `state.json` 中。**
+
 ---
 
-### 第六步：关键事件配置
+### 第六步：过程事件配置  (MCP 模式实现)
 
-**注意：本步骤使用 MCP (Model Context Protocol) 实现。**
+**注意：本步骤必须使用 MCP (Model Context Protocol) 实现。**
 
 传递以下内容（供 MCP 工具使用）：
 
@@ -184,11 +209,19 @@ metadata:
 | `outputs/industry_research.md` 路径 | ✅ 必传 | — |
 | MCP 调用命令 | ✅ 必传 根据 `outputs/industry_research.md` 中的各层级关键事件，在<完整拓扑的根节点>的资产目录下生成各层级关键事件。关键事件从叶子节点开始，逐层生成，直到根节点（L1）。 | ✅ 必传 根据用户提供的关键事件，生成各层级关键事件。|
 
+**工具选择（必须遵守）**：
+- ✅ **优先调用 `add_analysis`**，传入 `element_id`、`root_element_id` 和中文自然语言 `description`。
+- 描述需包含：事件名称、开始触发条件、持续时长、结束条件、事件级别、需在事件窗口内捕获的统计量。
+- 示例：`"当有功功率低于10kW且风速大于5m/s持续5分钟时，记录一次Critical级别的'机组非计划停机事件'，统计事件窗口内的平均风速，结束条件为有功功率大于等于10kW或风速小于等于5m/s"`
+- ⚠️ `add_analysis` 失败或结果不符时，才降级使用 `create_analysis`（trigger_type=Event）精确构造参数。
+
+**> 执行完毕后，检查关键事件是否按照要求创建成功，如果不成功，列出未成功的关键事件和失败原因。然后必须调用 `update_state.py` 将 `"events"` 追加到 `state.json` 中。**
+
 ---
 
 ### 第七步：可视化面板配置 (MCP 模式实现)
 
-**注意：本步骤使用 MCP (Model Context Protocol) 实现。**
+**注意：本步骤必须使用 MCP (Model Context Protocol) 实现。**
 
 传递以下内容（供 MCP 工具使用）：
 
@@ -198,11 +231,19 @@ metadata:
 | `outputs/industry_research.md` 路径 | ✅ 必传 | — |
 | MCP 调用命令 | ✅ 必传 根据 `outputs/industry_research.md` 中的可视化面板需求，在<完整拓扑的根节点>的资产目录下生成各层级面板。面板从叶子节点开始，逐层生成，直到根节点（L1）。 | ✅ 必传 根据用户提供的可视化面板需求，生成各层级面板。|
 
+**工具选择（必须遵守）**：
+- ✅ **优先调用 `add_panel`**，传入 `element_id`（目标节点）和中文自然语言 `description`。
+- 描述需包含：图表类型（折线/散点/柱状/状态时间轴等）、所需属性名称（与调研文档一致的中文名）、时间范围和业务含义。
+- 示例：`"折线图，展示过去7天1号气象站的风速和1分钟最高风速随时间变化"`
+- ⚠️ **已知行为**：`add_panel` 没有独立的 `name` 参数，面板名称（`name`/`fileName`）会被设置为完整的 `description` 字符串，这是该工具的固有机制，属于预期行为，无需额外处理。若要精确控制面板名称，须改用 `create_panel`（参见下方降级说明）。
+- ❌ **禁止直接使用 `create_panel` 的 `ya_attributes`/`xa_attributes` 参数**：其 schema 仅标注为 `array of object`，未声明必要子字段（`attributeExpression`、`expression`、`formula`、`window` 等），直接传入会导致属性列为 `null`，面板报错 `The column name of the data referred attribute null in the panel is empty`。
+- ⚠️ 仅当 `add_panel` 因节点无直接属性而失败（如 L1 根节点），或业务要求精确面板名称时，才使用以下两步流程：① 先用 `add_panel` 生成草稿，从返回的 `draft_result.yaAttributes` 获取完整属性结构；② 立即删除草稿，再用 `create_panel` 指定 `name` + 复用步骤①的属性对象重建。
+
+**> 执行完毕后，检查面板是否按照要求创建成功，如果不成功，列出未成功的面板和失败原因。然后必须调用 `update_state.py` 将 `"panels"` 追加到 `state.json` 中。**
+
 ---
 
-### 第八步：生成报告与博客
-
-**8.1 生成执行报告**
+### 第八步：生成报告
 
 将以下内容汇总生成 `outputs/final_report.md` 并保存至项目 `outputs/` 目录，同时在终端向用户展示摘要：
 
@@ -213,15 +254,8 @@ metadata:
 | 数据建模结果 | 数据库名、超级表列表、子表（设备）总数 |
 | 面板创建结果 | 面板总数、各节点面板分布 |
 | 告警分析结果 | 分析规则总数、各节点分布 |
-| 生成文件清单 | `outputs/industry_research.md`（类别 1）、`outputs/sample_data.json`、`outputs/panel_json/*.json`、`outputs/analysis_json/*.json`、`outputs/final_report.md` |
+| 生成文件清单 | `outputs/industry_research.md`（类别 1）、`outputs/final_report.md` |
 
-**8.2 生成博客**
-
-只在类别 1 场景 Demo 生成的情况下执行，调用 `idmp-blog-generator` 技能撰写一篇博客，需要配图的部分留空，后续手动添加。传递如下内容：
-| 传递内容 | 说明 |
-|---------|------|
-| 场景名称 | 直接传递第一步中确定的场景名称 |
-| `outputs/industry_research.md` 路径 | 供博客内容参考，尤其是第一章和第二章的写作 |
 
 ---
 
@@ -231,8 +265,8 @@ metadata:
 
 - [ ] **类别 1 调研完成**：`outputs/industry_research.md` 已生成且包含五个完整维度
 - [ ] **项目目录唯一**：项目根目录名称含时间戳，未覆盖已有目录
-- [ ] **流程执行完整**：`idmp-sample-data-generator`、`idmp-analysis-creator`、`MCP 可视化面板配置` 均已按序完成
+- [ ] **流程执行完整**：`idmp-sample-data-generator`、`MCP 可视化面板配置` 均已按序完成
 - [ ] **上下文传递完整**：每个子技能调用时均传递了项目目录路径和前置步骤关键信息
 - [ ] **数量达标（类别 1）**：面板总数 ≥ 5 个，分析任务总数 ≥ 5 个，且均分布在多个节点
-- [ ] **报告与博客已生成**：`outputs/final_report.md` 已保存，`idmp-blog-generator` 已调用
+- [ ] **报告已生成**：`outputs/final_report.md` 已保存
 

@@ -8,7 +8,7 @@ import argparse
 import time
 
 def login(host, port, user, password, base_url=None):
-    """登录 IDMP 获取 Token"""
+    """登录 IDMP 获取 Token（降级方案）。"""
     if base_url:
         url = f"{base_url.rstrip('/')}/api/v1/users/login"
     else:
@@ -49,6 +49,21 @@ def upload_sample(host, port, token, json_path, base_url=None):
         ('jsonFile', (os.path.basename(json_path), open(json_path, 'rb'), 'application/json')),
         ('imageFile', (os.path.basename(image_path), open(image_path, 'rb'), 'image/jpeg'))
     ]
+
+    # 直接读取 csv 目录下的所有 CSV 文件并附加到上传列表中
+    try:
+        json_dir = os.path.dirname(json_path)
+        datafiles_dir = os.path.join(json_dir, 'csv')
+        if os.path.exists(datafiles_dir) and os.path.isdir(datafiles_dir):
+            for filename in os.listdir(datafiles_dir):
+                if filename.lower().endswith('.csv'):
+                    actual_csv_path = os.path.join(datafiles_dir, filename)
+                    files.append(('csvFile', (f"{filename}", open(actual_csv_path, 'rb'), 'text/csv')))
+                    print(f"  发现 CSV 数据文件并加入上传列表: {actual_csv_path}")
+        else:
+            print(f"  提示: 未找到 {datafiles_dir} 目录，本次上传不包含额外的 CSV 文件。")
+    except Exception as e:
+        print(f"  查找 CSV 文件时出错: {e}")
 
     try:
         print(f"正在上传数据到 IDMP...")
@@ -115,12 +130,26 @@ def poll_status(host, port, token, sample_id, base_url=None):
                 return True
             
             if status == "FAILED":
-                error_msg = data.get('remark', '未知原因')
-                raise RuntimeError(f"示例数据加载失败: {error_msg}")
+                # 优先取 statusMessage 字段作为错误原因
+                status_message = data.get('statusMessage')
+                error_detail = status_message if status_message else f"服务端未提供 statusMessage，完整响应: {res_data}"
+                raise RuntimeError(f"示例数据加载失败 (FAILED): {error_detail}")
                 
             time.sleep(10)
+        except RuntimeError:
+            raise  # 业务失败直接上抛，触发调用方的清理逻辑
+        except requests.HTTPError as http_err:
+            # 提取 HTTP 错误时服务器返回的响应体
+            resp_text = ""
+            try:
+                resp_text = http_err.response.text
+            except Exception:
+                pass
+            raise RuntimeError(
+                f"轮询请求 HTTP 错误: {http_err} | 服务端响应: {resp_text}"
+            ) from http_err
         except Exception as e:
-            print(f"  轮询出错 (10s后重试): {e}")
+            print(f"  轮询出错 (10s后重试): {type(e).__name__}: {e}", flush=True)
             time.sleep(10)
 
 def delete_sample(host, port, token, sample_id, base_url=None):
@@ -136,9 +165,23 @@ def delete_sample(host, port, token, sample_id, base_url=None):
     print(f"正在发起卸载请求 (ID: {sample_id})...")
     try:
         requests.delete(unload_url, headers=headers).raise_for_status()
-        print("  卸载请求已发送。")
+        print("  卸载请求已发送。等待其变为 UNLOADED 状态...")
+        # 轮询直到变为 UNLOADED
+        for i in range(20):
+            try:
+                res = requests.get(unload_url, headers=headers)
+                if res.status_code == 200:
+                    data = res.json()
+                    status = (data.get('data') or data).get('status')
+                    if status == 'UNLOADED':
+                        print("  卸载已完成。")
+                        break
+                    print(f"  等待卸载，当前状态: {status}...")
+            except Exception as poll_err:
+                print(f"  轮询状态失败，可能已被删除: {poll_err}")
+            time.sleep(3)
     except Exception as e:
-        print(f"  警告: 卸载请求可能已失败(可能未加载): {e}")
+        print(f"  警告: 卸载请求可能已失败(可能未加载或已经卸载): {e}")
 
     # 2. 删除管理记录
     if base_url:
@@ -163,8 +206,13 @@ def delete_sample(host, port, token, sample_id, base_url=None):
             response.raise_for_status()
             res_data = response.json()
             # 检查列表中是否还存在此 ID
-            samples = res_data.get('data', []) if isinstance(res_data.get('data'), list) else res_data
-            if not any(str(s.get('id')) == str(sample_id) for s in samples):
+            samples = res_data.get('data', []) if isinstance(res_data, dict) else res_data
+            if isinstance(samples, dict) and 'data' in samples:
+                samples = samples['data']
+            if not isinstance(samples, list):
+                samples = []
+            
+            if not any(str(s.get('id', '')) == str(sample_id) for s in samples if isinstance(s, dict)):
                 print(f"[OK] ID {sample_id} 已成功从系统中移除。")
                 return True
             print(f"  ID 仍存在，等待 3s ({i+1}/5)...")
@@ -179,8 +227,9 @@ def main():
     parser = argparse.ArgumentParser(description='自动上传并加载或清理 IDMP 示例数据')
     parser.add_argument('--host', help='IDMP 系统 Host')
     parser.add_argument('--port', help='IDMP 系统 端口')
-    parser.add_argument('--user', help='登录用户名')
-    parser.add_argument('--password', help='登录密码')
+    parser.add_argument('--user', help='登录用户名（无 API Key 时使用）')
+    parser.add_argument('--password', help='登录密码（无 API Key 时使用）')
+    parser.add_argument('--api-key', dest='api_key', help='IDMP API Key（优先于用户名/密码）')
     parser.add_argument('--state', help='state.json 文件路径，从中读取登录信息')
     parser.add_argument('--sample_data', help='示例数据 JSON 文件路径 (上传模式必备)')
     parser.add_argument('--cleanup', help='要清理的示例数据 ID (清理模式)')
@@ -188,6 +237,7 @@ def main():
     args = parser.parse_args()
 
     host, port, user, password, base_url = args.host, args.port, args.user, args.password, None
+    api_key = args.api_key
 
     # 如果提供了 state.json，则从中读取登录信息
     if args.state:
@@ -198,6 +248,8 @@ def main():
             state_data = json.load(f)
             login_info = state_data.get('idmp-login') or state_data.get('login')
             if login_info:
+                # 优先读取 API Key
+                api_key = api_key or login_info.get('api_key')
                 base_url = login_info.get('url') or login_info.get('idmp_url')
                 user = user or login_info.get('user') or login_info.get('idmp_user')
                 password = password or login_info.get('pass') or login_info.get('idmp_pass')
@@ -208,16 +260,21 @@ def main():
             else:
                 print(f"警告: state 文件中未发现 'idmp-login' 或 'login' 信息")
 
-    # 校验必要参数
+    # 校验地址参数
     if not (base_url or (host and port)):
         parser.error("必须提供 (--host 和 --port) 或 --state (含有效登录信息)")
-    if not user or not password:
-        parser.error("必须提供 --user 和 --password，或在 --state 中包含它们")
+    # 校验鉴权参数：API Key 和用户名/密码二选一
+    if not api_key and (not user or not password):
+        parser.error("必须提供 --api-key，或同时提供 --user 和 --password（或在 --state 中包含它们）")
 
     try:
-        # 1. 登录
-        print("正在登录 IDMP...")
-        token = login(host, port, user, password, base_url=base_url)
+        # 1. 鉴权：API Key 优先，降级时登录获取 token
+        if api_key:
+            token = api_key
+            print("使用 API Key 进行身份验证...")
+        else:
+            print("正在登录 IDMP...")
+            token = login(host, port, user, password, base_url=base_url)
         
         # 2. 执行清理 (如果指定了 --cleanup)
         if args.cleanup:
@@ -237,14 +294,22 @@ def main():
             # 轮询状态
             poll_status(host, port, token, sample_id, base_url=base_url)
         except Exception as e:
-            print(f"\n[ERROR] 加载失败，正在自动清理残留资源 (ID: {sample_id})...")
+            # 若是 HTTPError，提取服务端响应体以暴露真实错误
+            server_detail = ""
+            if isinstance(e, requests.HTTPError) and e.response is not None:
+                try:
+                    server_detail = f" | 服务端响应: {e.response.text}"
+                except Exception:
+                    pass
+            print(f"\n[ERROR] 加载失败: {type(e).__name__}: {e}{server_detail}")
+            print(f"[ERROR] 正在自动清理残留资源 (ID: {sample_id})...")
             try:
                 delete_sample(host, port, token, sample_id, base_url=base_url)
             except Exception as delete_err:
                 print(f"  警告: 清理失败: {delete_err}")
             
-            # 抛出原始错误
-            raise RuntimeError(f"数据加载与执行异常: {e}")
+            # 用异常链保留原始 traceback
+            raise RuntimeError(f"数据加载与执行异常: {type(e).__name__}: {e}{server_detail}") from e
         
     except Exception as e:
         print(f"\n[FAIL] 运行出错: {e}")

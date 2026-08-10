@@ -7,7 +7,7 @@ import argparse
 import re
 
 def login(host, port, user, password, base_url=None):
-    """登录 IDMP 获取 Token"""
+    """登录 IDMP 获取 Token（降级方案）。"""
     if base_url:
         url = f"{base_url.rstrip('/')}/api/v1/users/login"
     else:
@@ -79,13 +79,15 @@ def main():
     parser = argparse.ArgumentParser(description='检查示例数据名称和元素模板是否与系统中冲突，并自动修复')
     parser.add_argument('--host', help='IDMP 系统 Host')
     parser.add_argument('--port', help='IDMP 系统 端口')
-    parser.add_argument('--user', help='登录用户名')
-    parser.add_argument('--password', help='登录密码')
+    parser.add_argument('--user', help='登录用户名（无 API Key 时使用）')
+    parser.add_argument('--password', help='登录密码（无 API Key 时使用）')
+    parser.add_argument('--api-key', dest='api_key', help='IDMP API Key（优先于用户名/密码）')
     parser.add_argument('--state', help='state.json 文件路径，从中读取登录信息')
     parser.add_argument('--sample_data', required=True, help='示例数据 JSON 文件路径')
     args = parser.parse_args()
 
     host, port, user, password, base_url = args.host, args.port, args.user, args.password, None
+    api_key = args.api_key
 
     # 如果提供了 state.json，则从中读取登录信息
     if args.state:
@@ -96,6 +98,8 @@ def main():
             state_data = json.load(f)
             login_info = state_data.get('idmp-login') or state_data.get('login')
             if login_info:
+                # 优先读取 API Key
+                api_key = api_key or login_info.get('api_key')
                 base_url = login_info.get('url') or login_info.get('idmp_url')
                 user = user or login_info.get('user') or login_info.get('idmp_user')
                 password = password or login_info.get('pass') or login_info.get('idmp_pass')
@@ -106,16 +110,21 @@ def main():
             else:
                 print(f"警告: state 文件中未发现 'idmp-login' 或 'login' 信息")
 
-    # 校验必要参数
+    # 校验地址参数
     if not (base_url or (host and port)):
         parser.error("必须提供 (--host 和 --port) 或 --state (含有效登录信息)")
-    if not user or not password:
-        parser.error("必须提供 --user 和 --password，或在 --state 中包含它们")
+    # 校验鉴权参数：API Key 和用户名/密码二选一
+    if not api_key and (not user or not password):
+        parser.error("必须提供 --api-key，或同时提供 --user 和 --password（或在 --state 中包含它们）")
 
     try:
-        # 1. 登录
-        print("正在登录 IDMP...")
-        token = login(host, port, user, password, base_url=base_url)
+        # 1. 鉴权：API Key 优先，降级时登录获取 token
+        if api_key:
+            token = api_key
+            print("使用 API Key 进行身份验证...")
+        else:
+            print("正在登录 IDMP...")
+            token = login(host, port, user, password, base_url=base_url)
         
         # 2. 读取 JSON
         with open(args.sample_data, 'r', encoding='utf-8') as f:

@@ -105,43 +105,42 @@
       ]
     }
   ],
-  "tree_root": {
-    "tag_name": "location",
+  "trees": {
     "value": "根节点名称(中文)",
-    "visible": "true"
+    "visible": "true",
+    "children": [
+      {
+        "template": "路径模板名称",
+        "values": "中间层节点(中文)",
+        "children": [
+          {
+            "template": "设备模板(叶子节点)",
+            "child_table_names": [
+              "dev-1",
+              "dev-2",
+              "dev-3",
+              "dev-4",
+              "dev-5"
+            ],
+            "values": [
+              "设备-1",
+              "设备-2",
+              "设备-3",
+              "设备-4",
+              "设备-5"
+            ],
+            "device_id": [
+              "SN001",
+              "SN002",
+              "SN003",
+              "SN004",
+              "SN005"
+            ]
+          }
+        ]
+      }
+    ]
   },
-  "trees": [
-    {
-      "template": "路径模板名称",
-      "values": "中间层节点(中文)",
-      "children": [
-        {
-          "template": "设备模板(叶子节点)",
-          "child_table_names": [
-            "dev-1",
-            "dev-2",
-            "dev-3",
-            "dev-4",
-            "dev-5"
-          ],
-          "values": [
-            "设备-1",
-            "设备-2",
-            "设备-3",
-            "设备-4",
-            "设备-5"
-          ],
-          "device_id": [
-            "SN001",
-            "SN002",
-            "SN003",
-            "SN004",
-            "SN005"
-          ]
-        }
-      ]
-    }
-  ],
   "__doc__": {
     "info": "场景元数据。id须唯一，file须与文件名一致。",
     "TDasset": "IDMP连接信息，命令行模式生效。",
@@ -165,14 +164,11 @@
       },
       "tags_hierarchy": "【强制规范】Tag值严禁包含“.”。需要体现多层级信息时，必须拆分为多个Tag存储。例如：不要使用 location: '中国.北京'，而应拆分为 country: '中国' 和 city: '北京'。"
     },
-    "tree_root": {
-      "tag_name": "【强制】设定为超级表中的第一个tag的名称。"
-    },
     "trees": {
       "child_table_names": "【强制规范】定义子表名称，必须使用纯英文及数字。禁止使用范围生成，如 dev-[1,5]，必须使用 dev_1, dev_2, dev_3, dev_4, dev_5 的方式明确指定。",
       "values": "【规范】定义在IDMP界面上显示的资产节点名称，应尽量使用中文。并确保和child_table_names中设定的数组长度相等。必须确保在全局范围内唯一，严禁在不同父节点下使用相同名称。",
-      "tag_assignment": "【强制规范】必须在树节点中直接给Tag赋值。并确保和child_table_names中设定的数组长度相等。即使某属性对于所有设备都是相同值，也必须写成相同长度的数组，例如：vendor: ['东方泵业', '东方泵业']。此赋值逻辑与 namingPattern 无关，严禁参考 namingPattern。",
-      "children_adv": "必须包含template对应的超级表中的所有tag。例如template对应的超级表中定义了3个tag，那么除第一个tag外，另外两个tag要在children中进行显式赋值。"
+      "tag_assignment": "【强制规范】必须在树节点中直接给Tag赋值。并确保和child_table_names中设定的数组长度相等。即使某属性对于所有设备都是相同值，也必须写成相同长度的数组，例如：vendor: ['东方泵业', '东方泵业']。",
+      "children_adv": "必须包含template对应的超级表中的所有tag。例如template对应的超级表中定义了3个tag，那么这3个tag都必须在children中进行显式赋值。"
     }
   }
 }

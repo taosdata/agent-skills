@@ -34,18 +34,15 @@ metadata:
 
 **namingPattern 固定值**
 - 所有 `templates` 中的 `namingPattern` 固定为 `${KEYWORD1}`，不得修改。
-- `super_tables` 中的 `tags` 数组必须包含 `namingPattern` 参数，值固定为 `${KEYWORD1}`。
 
 **资产命名与子表名唯一性**
-- `trees` 节点中的 `values`（资产显示名称）和 `child_table_names`（子表物理名）必须在全局范围内保持唯一。
 - 严禁在不同的行政层级或工艺段下使用重复的名称（例如：禁止在“A 线”和“B 线”中同时出现名称为“冲压机-1”的设备）。
 - **强制规范**：如果不同块中使用相同的设备模板，必须通过添加父级上下文前缀（如 `"values": ["灌装线1-泵-1", "灌装线1-泵-2"]`）或使用全局递增序列来确保名称不重复。
 
 **树状结构与 Tag 映射**
 - `tree_root` 中的 `tag_name` 必须设为对应超级表 `tags` 数组的**第一个** tag 名称。
-- `children` 节点中必须为超级表中**除第一个 tag 之外的所有其他 tag** 显式赋值。
+- `children` 节点中必须为超级表中**所有 tag（包括第一个 tag）**进行显式赋值。
 - Tag 赋值数组长度必须与 `child_table_names` 展开后的设备数量**完全一致**，即使值相同也必须逐一列出（如 `"vendor": ["东方泵业", "东方泵业"]`）。
-- Tag 赋值逻辑与 `namingPattern` 无关，严禁参考 `namingPattern` 进行赋值。
 
 **模拟函数（fun）**
 - `fun` 字段**仅允许**使用 `sin(x)`、`cos(x)`、`random(n)` 三种函数。
@@ -153,7 +150,12 @@ python3 -c "import json; json.load(open('<文件路径>'))" && echo "JSON OK"
 
 > 所有接口调用默认使用 `curl` 命令在 bash 环境中执行。
 
-**4.1 身份认证**
+**4.1 身份认证（API Key 优先）**
+
+优先从 `state.json` 的 `idmp-login.api_key` 字段读取 API Key，直接构造
+`Authorization: Bearer <api_key>` 请求头，跳过登录步骤。
+
+若 `api_key` 不存在，降级执行用户名/密码登录：
 
 ```
 POST /api/v1/users/login
