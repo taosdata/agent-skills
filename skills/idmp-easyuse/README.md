@@ -18,7 +18,6 @@
 idmp-easyuse/
 ├── README.md                        # 本说明文档
 ├── SKILL.md                         # 技能主文件（执行规范）
-├── SKILL.md.sample-demo             # 场景 Demo 版本的参考样例
 ├── references/
 │   ├── idmp_analysis_abilities.md   # 分析能力、触发方式和计算约束
 │   ├── idmp_mcp_config.md           # MCP 服务配置示例
@@ -26,7 +25,7 @@ idmp-easyuse/
 │   └── research_specification.md    # 调研文档的结构与写法规范
 └── scripts/
     ├── prepare_project_dir.py       # 初始化项目目录
-    ├── prepare_mcp_config_content.py# 创建/获取 MCP API Key 并写入配置
+    ├── prepare_mcp_config_content.py # 创建/获取 MCP API Key 并写入配置
     ├── get_login_token.py           # 获取登录 Token
     └── update_state.py              # 更新 outputs/state.json 的 steps 数组
 ```
