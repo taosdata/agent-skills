@@ -1,0 +1,6 @@
+TDengine IDMP:
+  host: localhost
+  port: 6042
+  user: <your_idmp_username>
+  password: <your_idmp_password>
+  api_key: <your_apt_key>
