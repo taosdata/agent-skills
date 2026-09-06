@@ -62,7 +62,6 @@ metadata:
   ```
   insert_rows = 7 * 24 * 60 * 60 * 1000 / time_step
   ```
-- 若提供了 CSV 数据文件，`insert_rows` 固定设为 `0`。
 
 **文件写入**
 - 严禁用单次 `Write` 工具写入完整 JSON，必须执行分段写入（见第二步）。
@@ -211,7 +210,7 @@ python3 scripts/upload_sample.py --state outputs/state.json --sample_data output
 
 该脚本执行以下集成操作：
 1. **自动获取 Token**：完成身份认证。
-2. **生成占位图**：自动在 JSON 同级目录下生成 API 所需的空 `placeholder.jpg`。
+2. **占位图**：使用 templates 目录下的 `placeholder.jpg`。
 3. **上传数据**：构造 Multipart 请求并上传 `sample_data.json` 与占位图。
 4. **触发加载**：上传成功后自动调用 `POST /api/v1/samples/{id}` 接口。
 5. **轮询状态**：自动轮询进度，直到状态为 **`LOADED`** 或 **`GENERATING` 且进度百分比 > 30%** 时判定为成功。

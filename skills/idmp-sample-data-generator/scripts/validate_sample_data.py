@@ -71,6 +71,10 @@ def validate(data: dict, filepath: str):
                 if field not in stb:
                     err(spath, f"缺少必填字段: {field}")
 
+            # non_stop_mode 值校验：必须为 JSON 布尔值（默认为 true）
+            if 'non_stop_mode' in stb and not isinstance(stb['non_stop_mode'], bool):
+                err(spath, f"non_stop_mode 必须为布尔值 true 或 false（默认为 true），当前值: {stb['non_stop_mode']!r}")
+
             # insert_rows 值校验：按公式 7*24*3600*1000/time_step 计算，必须 > 0
             if 'insert_rows' in stb:
                 ir = stb['insert_rows']
