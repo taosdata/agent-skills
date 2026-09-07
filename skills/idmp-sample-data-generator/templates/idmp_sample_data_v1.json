@@ -71,9 +71,9 @@
         {
           "db": "idmp_sample_db",
           "name": "stb_name",
-          "start_timestamp": null,
+          "start_timestamp": "now - 7d",
           "time_step": 60000,
-          "non_stop_mode": false,
+          "non_stop_mode": true,
           "beyond_current_time": false,
           "insert_rows": 10080,
           "batch_insert_num": 1000,
@@ -152,7 +152,7 @@
       "super_tables": {
         "TSDB_model_rule": "【强制规范】遵循TDengine TSDB数据建模逻辑：同类设备一张超级表。不同采集指标的设备必须建立独立的超级表，切勿将拥有不同采集指标（Metrics）的设备强行合并为同一超级表。即使部分Metrics相似，但只要存在差异，就必须拆分超级表（即拆分设备模板），并分别定义对应的采集指标。",
         "time_step": "数据时间步进(ms)。",
-        "non_stop_mode": "【强制】是否持续生成模拟数据，默认为 false。",
+        "non_stop_mode": "【强制】是否持续生成模拟数据，默认为 true。",
         "beyond_current_time": "【强制】是否允许生成超过当前时间的数据，可选 true 或 false。",
         "insert_rows": "【强制规则】必须默认生成过去 7 天的历史数据。请根据您设定的 time_step 自动计算此值，公式为：7 * 24 * 60 * 60 * 1000 / time_step（例如：time_step为60000时，此处应填 10080）。",
         "batch_insert_num": "【强制】批量写入的行数，默认值为 1000。根据写入量调节数量，最大100000",

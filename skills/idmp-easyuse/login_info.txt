@@ -3,4 +3,4 @@ TDengine IDMP:
   port: 6042
   user: <your_idmp_username>
   password: <your_idmp_password>
-  api_key: <your_apt_key>
+  api_key: <your_api_key>

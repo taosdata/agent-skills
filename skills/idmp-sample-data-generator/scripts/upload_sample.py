@@ -38,12 +38,12 @@ def upload_sample(host, port, token, json_path, base_url=None):
     if not os.path.exists(json_path):
         raise FileNotFoundError(f"未找到 JSON 文件: {json_path}")
     
-    # 在 JSON 同级目录创建临时占位图
-    image_path = os.path.join(os.path.dirname(json_path), "placeholder.jpg")
+    # 使用技能自带的占位图片 (templates/placeholder.jpg)，不再自动生成空占位图
+    image_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                              "templates", "placeholder.jpg")
     if not os.path.exists(image_path):
-        with open(image_path, 'wb') as f:
-            f.write(b"") # 0字节占位符
-        print(f"  已创建系统所需的占位图片: {image_path}")
+        raise FileNotFoundError(f"未找到技能自带的占位图片: {image_path}")
+    print(f"  使用技能自带占位图片: {image_path}")
 
     files = [
         ('jsonFile', (os.path.basename(json_path), open(json_path, 'rb'), 'application/json')),
