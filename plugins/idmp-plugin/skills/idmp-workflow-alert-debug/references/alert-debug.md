@@ -63,7 +63,7 @@ After resend:
 
 ## Handback rules
 
-- If no event exists, hand the case back to `../idmp-workflow-alert-create/SKILL.md` and debug generation, not delivery.
+- If no event exists, hand the case back to `../../idmp-workflow-alert-create/SKILL.md` and debug generation, not delivery.
 - If the event exists but no applicable notify rule exists, hand the case back to alert create to repair the binding.
 - If global config or contact points are broken, this is notification infrastructure, not event generation.
 

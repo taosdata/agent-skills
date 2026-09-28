@@ -1,5 +1,9 @@
 # Safety and Risk Rules
 
+## CLI transport boundary
+
+`--dry-run` checks local JSON syntax and path parameters only; it does not validate DTO completeness, permissions, connectivity, or server-side semantics. `--data` and raw `idmp-cli api` accept inline JSON only; they do not support multipart uploads or byte-exact binary downloads.
+
 ## Destructive Operation Confirmation Protocol
 
 > **Hard requirement for AI agents**: before any **write / delete / update** operation against the IDMP server or local CLI configuration, first print the four items below and stop for an explicit `yes` / `no` answer. Until the user confirms, do **not** call `DELETE`, non-readonly `POST`, `PUT`, `PATCH`, any command with `--ack-risk`, or local destructive commands such as `config remove` and `profile remove`.

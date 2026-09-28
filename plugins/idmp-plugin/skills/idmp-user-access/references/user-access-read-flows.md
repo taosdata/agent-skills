@@ -18,7 +18,6 @@ Use this reference to separate visibility, permission-boundary, and role-design 
    idmp-cli role roles list --params '{"current":1,"size":20}'
    idmp-cli role roles get --params '{"roleId":330001}'
    idmp-cli permission groups list
-   idmp-cli permission groups merge --params '{"roleIds":[330001,330002]}'
    ```
 
 3. Resolve what can actually be assigned:
@@ -31,8 +30,8 @@ Use this reference to separate visibility, permission-boundary, and role-design 
 4. For group-scoped permission chains:
 
    ```bash
-   idmp-cli permission usergroups assignable --params '{"usergroupId":456}'
-   idmp-cli permission roles list --params '{"usergroupId":456}'
+   idmp-cli permission usergroups assignable --params '{"userGroupId":456}'
+   idmp-cli permission roles list --params '{"userGroupId":456}'
    ```
 
 ## Boundary decisions
@@ -61,3 +60,5 @@ idmp-cli role roles get --params '{"roleId":123}'
 1. `user users list` and `user page list` are different views; do not substitute one for the other.
 2. `role roles create` requires non-empty `permissionGroupIds`.
 3. Always prove assignability before grant or revoke.
+
+The merge endpoint accepts an array query parameter that the current CLI rejects; use individual role reads or a client supporting repeated query parameters.

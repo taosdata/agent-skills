@@ -2,8 +2,8 @@
 name: idmp-attribute
 description: "IDMP attribute skill for reading definitions and values, checking history, evaluating expressions, reserving names, and safely writing test data."
 metadata:
-  author: "TaosData"
-  version: "0.4.0"
+  author: "TAOS Data"
+  version: "0.4.1"
   owner_team: "AI"
   requires:
     bins:

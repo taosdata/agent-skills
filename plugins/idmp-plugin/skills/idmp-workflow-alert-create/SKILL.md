@@ -2,8 +2,8 @@
 name: idmp-workflow-alert-create
 description: "IDMP alert creation workflow. Prepare the event template, create the Event-trigger analysis, and treat reread plus Running as success without actively triggering alerts."
 metadata:
-  author: "TaosData"
-  version: "0.7.1"
+  author: "TAOS Data"
+  version: "0.7.2"
   owner_team: "AI"
   requires:
     bins:

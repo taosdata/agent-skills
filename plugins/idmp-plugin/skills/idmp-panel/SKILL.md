@@ -2,8 +2,8 @@
 name: idmp-panel
 description: "IDMP panel skill for listing panels, reading details, creating and validating panel queries, and separating panel lifecycle from dashboard placement."
 metadata:
-  author: "TaosData"
-  version: "0.5.0"
+  author: "TAOS Data"
+  version: "0.5.1"
   owner_team: "AI"
   requires:
     bins:
@@ -62,6 +62,8 @@ metadata:
 - Dashboard placement is separate proof; do not treat a panel create as dashboard membership.
 
 ## Product behavior to preserve
+
+- Text/manual panels can legitimately have no generated SQL; skip query and SQL validation for those types and verify saved content/type instead.
 
 - Read `list` first, then `get`, before changing a panel.
 - For natural-language creation asks, prefer the AI draft endpoint first and keep structured DTO creation as the fallback.

@@ -112,7 +112,7 @@ datasource csv create
 - optional fields: hasHeader, quote, escapeChar
 ```
 
-Use this only after ingestion visibility is confirmed and hand off to `../idmp-workflow-data-import-export/SKILL.md`.
+Use this only after ingestion visibility is confirmed and hand off to `../../idmp-workflow-data-import-export/SKILL.md`.
 
 ## One-shot checklist
 

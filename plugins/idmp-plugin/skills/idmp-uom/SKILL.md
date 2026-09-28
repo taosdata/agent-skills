@@ -2,8 +2,8 @@
 name: idmp-uom
 description: "IDMP unit-of-measure skill. Use it to inspect UOM classes, class-scoped units, free UOM lookup, search, and conversion, while keeping `get` and `get-get` clearly separated."
 metadata:
-  author: "TaosData"
-  version: "0.3.0"
+  author: "TAOS Data"
+  version: "0.3.1"
   owner_team: "AI"
   requires:
     bins:

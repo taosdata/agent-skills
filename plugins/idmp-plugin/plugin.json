@@ -1,0 +1,43 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "idmp-plugin",
+  "description": "TDengine IDMP plugin with packaged skills for discovery, schema inspection, and safe operational workflows.",
+  "version": "0.1.0",
+  "author": {
+    "name": "TAOS Data",
+    "email": "it@taosdata.com"
+  },
+  "keywords": [
+    "TDengine",
+    "IDMP",
+    "database",
+    "monitoring",
+    "alert",
+    "dashboard",
+    "industrial-data",
+    "industrial-manufacturing",
+    "data-management",
+    "iot",
+    "time-series",
+    "asset-modeling",
+    "data-ingestion"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "TDengine IDMP",
+        "shortDescription": "Explore and manage TDengine IDMP with idmp-cli.",
+        "longDescription": "Packaged skills for TDengine IDMP discovery, schema inspection, asset modeling, dashboards, alerts, and safe operational workflows. Requires idmp-cli and an authenticated IDMP profile.",
+        "developerName": "TAOS Data",
+        "category": "Productivity",
+        "capabilities": [
+          "Read",
+          "Write"
+        ],
+        "defaultPrompt": [
+          "Check my IDMP connection and list the available root elements."
+        ]
+      }
+    }
+  }
+}

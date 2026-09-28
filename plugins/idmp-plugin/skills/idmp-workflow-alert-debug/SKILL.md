@@ -2,8 +2,8 @@
 name: idmp-workflow-alert-debug
 description: "IDMP alert debugging workflow. Walk the operator chain from event count and detail to context, acknowledgement, resend, annotations, notify rules, and delivery history."
 metadata:
-  author: "TaosData"
-  version: "0.5.0"
+  author: "TAOS Data"
+  version: "0.5.1"
   owner_team: "AI"
   requires:
     bins:

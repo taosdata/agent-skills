@@ -2,8 +2,8 @@
 name: idmp-data
 description: "IDMP data import/export skill. Use it to inspect exportable root elements, review import/export records, download artifacts, and distinguish package export, artifact download, and import flows."
 metadata:
-  author: "TaosData"
-  version: "0.5.0"
+  author: "TAOS Data"
+  version: "0.5.1"
   owner_team: "AI"
   requires:
     bins:
@@ -81,7 +81,7 @@ idmp-cli data download get --params '{"name":"export.zip"}'
 idmp-cli schema data.import-and-export.import
 # `data.import-and-export.import` is multipart/form-data in the current schema.
 # Inspect the schema output first and build the request with the exact transport and fields
-# (for example `jsonFile` / `taosgenFiles[]`) instead of assuming a plain JSON body.
+# (for example `json_file` / `taosgen_file`) instead of assuming a plain JSON body.
 idmp-cli data import-and-export import --ack-risk --data '{...}'
 
 idmp-cli schema data.single-import.create

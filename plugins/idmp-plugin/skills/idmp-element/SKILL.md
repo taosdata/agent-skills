@@ -2,8 +2,8 @@
 name: idmp-element
 description: "IDMP element skill for locating elementId, resolving business-root paths, browsing children, and preparing downstream analysis or panel work."
 metadata:
-  author: "TaosData"
-  version: "0.4.0"
+  author: "TAOS Data"
+  version: "0.4.1"
   owner_team: "AI"
   requires:
     bins:

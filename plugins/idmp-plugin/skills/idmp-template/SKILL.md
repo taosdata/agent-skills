@@ -2,8 +2,8 @@
 name: idmp-template
 description: "IDMP template skill for reading element templates, template attributes, sub-templates, trigger types, and create-safe names without mixing template mode with live element mode."
 metadata:
-  author: "TaosData"
-  version: "0.4.0"
+  author: "TAOS Data"
+  version: "0.4.1"
   owner_team: "AI"
   requires:
     bins:
