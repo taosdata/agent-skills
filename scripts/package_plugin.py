@@ -15,7 +15,12 @@ args = parser.parse_args()
 root = args.plugin_dir
 manifest = root / ("plugin.json" if args.manifest == "codex" else ".claude-plugin/plugin.json")
 files = [manifest] + sorted((root / "skills").rglob("*"))
-files = [path for path in files if path.is_file()]
+files = [
+    path for path in files
+    if path.is_file()
+    and path.name != ".DS_Store"
+    and "__pycache__" not in path.relative_to(root).parts
+]
 
 args.output.parent.mkdir(parents=True, exist_ok=True)
 with ZipFile(args.output, "w", ZIP_DEFLATED) as archive:
