@@ -14,6 +14,8 @@ args = parser.parse_args()
 
 root = args.plugin_dir
 manifest = root / ("plugin.json" if args.manifest == "codex" else ".claude-plugin/plugin.json")
+if not manifest.is_file():
+    parser.error(f"Required plugin manifest not found: {manifest}")
 files = [manifest] + sorted((root / "skills").rglob("*"))
 files = [
     path for path in files
