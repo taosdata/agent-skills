@@ -2,8 +2,8 @@
 name: idmp-openapi-explorer
 description: "IDMP OpenAPI explorer skill. Use it to inspect schema paths, required inputs, and generated commands; fall back to raw API only after schema and generated commands are exhausted."
 metadata:
-  author: "TaosData"
-  version: "0.3.0"
+  author: "TAOS Data"
+  version: "0.3.1"
   owner_team: "AI"
   requires:
     bins:

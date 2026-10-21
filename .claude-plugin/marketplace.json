@@ -1,10 +1,10 @@
 {
   "name": "taosdata",
   "owner": {
-    "name": "TaosData",
+    "name": "TAOS Data",
     "email": "it@taosdata.com"
   },
-  "description": "Official TaosData plugins for Claude Code",
+  "description": "Official TAOS Data plugins for Claude Code",
   "plugins": [
     {
       "name": "idmp-plugin",

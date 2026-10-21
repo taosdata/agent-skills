@@ -2,8 +2,8 @@
 name: idmp-dashboard
 description: "IDMP dashboard skill for listing dashboards, reading details, updating layout and order, templating stable dashboards, and keeping dashboard lifecycle separate from panel lifecycle."
 metadata:
-  author: "TaosData"
-  version: "0.6.0"
+  author: "TAOS Data"
+  version: "0.6.1"
   owner_team: "AI"
   requires:
     bins:

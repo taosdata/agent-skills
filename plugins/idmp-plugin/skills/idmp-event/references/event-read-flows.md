@@ -27,14 +27,14 @@ Use this reference to inspect current event state before deciding whether the ne
 
 ## Action handoff
 
-- if no event exists for the expected condition, switch to `../idmp-workflow-alert-debug/SKILL.md`
+- if no event exists for the expected condition, switch to `../../idmp-workflow-alert-debug/SKILL.md`
 - if the event exists and the operator only wants acknowledgement or resend, stay in the event skill
 
 ## Mutating actions
 
 ```bash
 idmp-cli event events confirm --dry-run --ack-risk --params '{"eventId":123}'
-idmp-cli event confirm create --dry-run --ack-risk --data '[123,456]'
+idmp-cli event batch confirm --dry-run --ack-risk --data '[123,456]'
 idmp-cli event events resend --dry-run --ack-risk --params '{"eventId":123}'
 ```
 

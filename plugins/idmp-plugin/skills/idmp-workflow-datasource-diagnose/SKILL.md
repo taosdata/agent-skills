@@ -2,8 +2,8 @@
 name: idmp-workflow-datasource-diagnose
 description: "IDMP datasource diagnosis workflow. Read the connection, probe connectivity, inspect databases and metadata, compare model mappings, and reread after every probe or write."
 metadata:
-  author: "TaosData"
-  version: "0.6.0"
+  author: "TAOS Data"
+  version: "0.6.1"
   owner_team: "AI"
   requires:
     bins:

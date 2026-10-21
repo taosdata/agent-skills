@@ -2,8 +2,8 @@
 name: idmp-shared
 description: "Shared IDMP CLI rules for choosing element mode vs template mode, resolving business-root rootElementId, acknowledging risky writes, and verifying results."
 metadata:
-  author: "TaosData"
-  version: "0.4.0"
+  author: "TAOS Data"
+  version: "0.4.1"
   owner_team: "AI"
   requires:
     bins:

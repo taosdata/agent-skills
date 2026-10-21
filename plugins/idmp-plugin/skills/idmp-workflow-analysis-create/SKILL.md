@@ -2,8 +2,8 @@
 name: idmp-workflow-analysis-create
 description: "IDMP analysis creation workflow. Resolve mode, owner, trigger types, output attributes, creation payload, post-create verification, resume, and cleanup."
 metadata:
-  author: "TaosData"
-  version: "0.8.0"
+  author: "TAOS Data"
+  version: "0.8.1"
   owner_team: "AI"
   requires:
     bins:

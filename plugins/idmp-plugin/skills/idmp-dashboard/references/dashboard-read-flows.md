@@ -25,7 +25,7 @@ Use this reference to inspect dashboard inventory and decide whether the next st
 
 ## What to conclude from reads
 
-- if the dashboard exists but the target panel is missing or wrong, hand off to `../idmp-workflow-panel-build/SKILL.md`
+- if the dashboard exists but the target panel is missing or wrong, hand off to `../../idmp-workflow-panel-build/SKILL.md`
 - if the dashboard layout is correct and only the ordering or top-pinning is wrong, dashboard mutation is enough
 - if the operator wants a reusable artifact for other owners, prefer template creation after the dashboard itself is stable
 

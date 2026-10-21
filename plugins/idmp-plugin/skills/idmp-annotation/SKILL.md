@@ -2,8 +2,8 @@
 name: idmp-annotation
 description: "IDMP annotation skill. Use it to read and write element annotations while keeping element annotations separate from event annotations."
 metadata:
-  author: "TaosData"
-  version: "0.4.0"
+  author: "TAOS Data"
+  version: "0.4.1"
   owner_team: "AI"
   requires:
     bins:

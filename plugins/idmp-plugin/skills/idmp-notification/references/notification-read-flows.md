@@ -37,8 +37,8 @@ Use this reference to inspect delivery infrastructure and decide whether the iss
 ## Boundary decisions
 
 - if the global config or contact point is broken, this is notification infrastructure
-- if notify rules are missing or mismatched, hand off to `../idmp-workflow-alert-create/SKILL.md`
-- if rules exist and the event already exists, hand off to `../idmp-workflow-alert-debug/SKILL.md`
+- if notify rules are missing or mismatched, hand off to `../../idmp-workflow-alert-create/SKILL.md`
+- if rules exist and the event already exists, hand off to `../../idmp-workflow-alert-debug/SKILL.md`
 
 ## Safe write handoff
 

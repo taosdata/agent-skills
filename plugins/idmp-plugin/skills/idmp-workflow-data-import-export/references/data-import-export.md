@@ -52,10 +52,10 @@ after the real name is known.
 ```text
 required transport: multipart/form-data
 fields:
-- connectionId
-- contactId
-- jsonFile
-- taosgenFiles[]
+- connection_id
+- contact_id
+- json_file
+- taosgen_file
 ```
 
 Inspect first:

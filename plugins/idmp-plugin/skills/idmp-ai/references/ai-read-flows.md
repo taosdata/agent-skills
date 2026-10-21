@@ -32,7 +32,7 @@ Use this reference to decide whether the environment can support AI-assisted gen
 
 ## Branching rules
 
-- if `datasource available list` returns false, stop and hand off to `../idmp-workflow-asset-bootstrap/SKILL.md`
+- if `datasource available list` returns false, stop and hand off to `../../idmp-workflow-asset-bootstrap/SKILL.md`
 - if `ai anydata list` is false, the AI backend may still exist, but design generation will likely be low quality
 - if recommendations return `[]` while availability probes are still true, classify that as an empty recommendation result instead of fabricating generated prompts or declaring an outage
 - if sessions are visible but new recommendations fail with a structured error, this is AI-service availability, not data availability
@@ -46,7 +46,8 @@ Use this reference to decide whether the environment can support AI-assisted gen
 - use `create` when the operator already has a prompt and wants a draft output directly
 - keep recommendation `questionType` aligned with the backend enum: `GENERAL_QUESTION`, `GEN_PANEL_QUESTION`, or `GEN_ANALYSIS_QUESTION`
 - use `ai ai chat` with `record:true` and `sessionId:null` when the operator wants a visible recorded chat session
-- use `record:true` only when the operator wants the result stored in chat history
+- on chat endpoints, use `record:true` only when the operator wants the result stored in chat history
+- on draft create endpoints, `record:true` logs recommendation usage; it does not save the draft or create a chat session
 
 ## Request starters that match the current contracts
 

@@ -1,6 +1,6 @@
 # datasource read flow
 
-Use this reference for inspection. If the goal becomes diagnosis, hand off to `../idmp-workflow-datasource-diagnose/SKILL.md`.
+Use this reference for inspection. If the goal becomes diagnosis, hand off to `../../idmp-workflow-datasource-diagnose/SKILL.md`.
 
 ## Read-first sequence
 

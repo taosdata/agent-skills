@@ -92,6 +92,6 @@ Use this together with child scope and x-axis grouping on `element`. Do not add 
 
 ## When to hand off
 
-- For full alert expressions and trigger payloads, use `../idmp-workflow-analysis-create/references/analysis-create.md`.
+- For full alert expressions and trigger payloads, use `../../idmp-workflow-analysis-create/references/analysis-create.md`.
 - For chart-specific payload starters, use `chart-type-guide.md` and `../../idmp-workflow-panel-build/references/panel-build.md`.
 - For error handling after a failed expression write, use `error-recovery.md`.

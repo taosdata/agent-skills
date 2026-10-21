@@ -2,8 +2,8 @@
 name: idmp-workflow-data-import-export
 description: "IDMP data import and export workflow. Separate package import or export from datasource CSV import, read first, write carefully, and reread records after every write."
 metadata:
-  author: "TaosData"
-  version: "0.6.0"
+  author: "TAOS Data"
+  version: "0.6.1"
   owner_team: "AI"
   requires:
     bins:
